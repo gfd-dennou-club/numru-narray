@@ -14,12 +14,12 @@
 
 /* Multi-Dimensional Array Investigation */
 typedef struct {
-  int shape;
+  shape_t shape;
   VALUE val;
 } na_mdai_item_t;
 
 typedef struct {
-  int n;
+  shape_t n;
   na_mdai_item_t *item;
   int *type;
 } na_mdai_t;
@@ -57,7 +57,8 @@ int na_object_type(VALUE v)
 static na_mdai_t *
   na_alloc_mdai(VALUE ary)
 {
-  int i, n=2;
+  int i;
+  shape_t n=2;
   na_mdai_t *mdai;
 
   mdai = ALLOC(na_mdai_t);
@@ -76,9 +77,9 @@ static na_mdai_t *
 }
 
 static void
-  na_realloc_mdai(na_mdai_t *mdai, int n_extra)
+  na_realloc_mdai(na_mdai_t *mdai, shape_t n_extra)
 {
-  int i, n;
+  shape_t i, n;
 
   i = mdai->n;
   mdai->n += n_extra;
@@ -90,11 +91,12 @@ static void
   }
 }
 
-static int *
+static shape_t *
   na_free_mdai(na_mdai_t *mdai, int *rank, int *type)
 {
-  int i, t, r;
-  int *shape;
+  shape_t i;
+  int t, r;
+  shape_t *shape;
 
   for (t=i=NA_BYTE; i<NA_NTYPES; ++i) {
     if ( mdai->type[i] > 0 )
@@ -103,7 +105,7 @@ static int *
   *type = t;
   for (i=0; i < mdai->n && mdai->item[i].shape > 0; ++i) ;
   *rank = r = i;
-  shape = ALLOC_N(int,r);
+  shape = ALLOC_N(shape_t,r);
   for (i=0; r-->0; ++i) {
     shape[i] = mdai->item[r].shape;
   }
@@ -118,12 +120,12 @@ static int *
 
 /* Range as a Sequence of numbers */
 static void
- na_range_to_sequence(VALUE obj, int *n, int *beg, int *step)
+ na_range_to_sequence(VALUE obj, shape_t *n, shape_t *beg, int *step)
 {
-  int end,len;
+  shape_t end, len;
 
-  *beg = NUM2INT(rb_funcall(obj, na_id_beg, 0));
-  end = NUM2INT(rb_funcall(obj, na_id_end, 0));
+  *beg = NUM2SHAPE(rb_funcall(obj, na_id_beg, 0));
+  end = NUM2SHAPE(rb_funcall(obj, na_id_end, 0));
   len = end - *beg;
 
   /* direction */
@@ -150,7 +152,8 @@ static void
 static int
   na_do_mdai(na_mdai_t *mdai, int rank)
 {
-  int i, j, len, length, start, dir;
+  shape_t i, start, len, length;
+  int j, dir;
   VALUE v;
   VALUE ary;
 
@@ -214,17 +217,18 @@ static int
 
 
 /* get index from multiple-index  */
-static int
- na_index_pos(struct NARRAY *ary, int *idxs)
+static shape_t
+ na_index_pos(struct NARRAY *ary, shape_t *idxs)
 {
-  int i, idx, pos = 0;
+  int i;
+  shape_t idx, pos = 0;
 
   for ( i = ary->rank; (i--)>0; ) {
     idx = idxs[i];
     if (idx < 0 || ary->shape[i] <= idx) {
       abort();
       rb_raise(rb_eRuntimeError,
-	       "Subsctipt out of range: accessing shape[%i]=%i with %i",
+	       "Subsctipt out of range: accessing shape[%i]=%zd with %zd",
 	       i, ary->shape[i], idx );
     }
     pos = pos * ary->shape[i] + idx;
@@ -235,7 +239,7 @@ static int
 
 static void
  na_copy_nary_to_nary(VALUE obj, struct NARRAY *dst,
-		      int thisrank, int *idx)
+		      int thisrank, shape_t *idx)
 {
   struct NARRAY *src;
   struct slice *s;
@@ -270,9 +274,10 @@ static void
 /* copy Array to NArray */
 static void
  na_copy_ary_to_nary( VALUE ary, struct NARRAY *na,
-		      int thisrank, int *idx, int type )
+		      int thisrank, shape_t *idx, int type )
 {
-  int i, j, pos, len, start, step, dir;
+  shape_t i, len, pos, start, step;
+  int j, dir;
   VALUE v;
 
   if (thisrank==0) {
@@ -282,7 +287,7 @@ static void
 	na_range_to_sequence(v,&len,&start,&dir);
 	if (len>0) {
 	  pos = na_index_pos(na,idx);
-	  IndGenFuncs[type](len, NA_PTR(na,pos),na_sizeof[type], start,dir);
+	  IndGenFuncs[type](len, NA_PTR(na,pos),na_sizeof[type], start, (shape_t)dir);
 	  idx[0] += len;
 	}
       }
@@ -319,7 +324,7 @@ static void
 	    ++idx[thisrank];
 	    step = na_index_pos(na,idx)-pos;
 	    IndGenFuncs[type]( len, NA_PTR(na,pos), na_sizeof[type]*step,
-			       start, dir );
+			       start, (shape_t)dir );
 	    idx[thisrank] += len-1;
 	  }
 	}
@@ -340,7 +345,8 @@ static VALUE
 {
   int  i, rank;
   int  type = NA_BYTE;
-  int *shape, *idx;
+  shape_t *shape;
+  shape_t *idx;
   na_mdai_t *mdai;
   struct NARRAY *na;
   VALUE v;
@@ -354,11 +360,12 @@ static VALUE
   na_do_mdai(mdai,1);
   shape = na_free_mdai(mdai,&rank,&type);
 
+
   /*
   printf("rank=%i\n", rank);
   printf("type=%i\n", type);
   for (i=0; i<rank; ++i) {
-    printf("shape[%i]=%i\n", i, shape[i]);
+    printf("shape[%i]=%zi\n", i, shape[i]);
   }
   */
 
@@ -377,7 +384,7 @@ static VALUE
   GetNArray(v,na);
   na_clear_data(na);
 
-  idx = ALLOCA_N(int,rank);
+  idx = ALLOCA_N(shape_t,rank);
   for (i=0; i<rank; ++i) idx[i]=0;
 
   na_copy_ary_to_nary( ary, na, rank-1, idx, type );
@@ -509,9 +516,10 @@ VALUE
 
 /* convert NArray to Array */
 static VALUE
- na_to_array0(struct NARRAY* na, int *idx, int thisrank, void (*func)())
+ na_to_array0(struct NARRAY* na, shape_t *idx, int thisrank, void (*func)())
 {
-  int i, elmsz;
+  shape_t i;
+  int elmsz;
   char *ptr;
   VALUE ary, val;
 
@@ -542,26 +550,27 @@ VALUE
  na_to_array(VALUE obj)
 {
   struct NARRAY *na;
-  int *idx, i;
+  shape_t *idx;
+  int i;
 
   GetNArray(obj,na);
 
   if (na->rank<1)
     return rb_ary_new();
 
-  idx = ALLOCA_N(int,na->rank);
+  idx = ALLOCA_N(shape_t,na->rank);
   for (i = 0; i<na->rank; ++i) idx[i] = 0;
   return na_to_array0(na,idx,na->rank-1,SetFuncs[NA_ROBJ][na->type]);
 }
 
 
 static VALUE
- na_inspect_col( int n, char *p2, int p2step, void (*tostr)(),
+ na_inspect_col( shape_t n, char *p2, int p2step, void (*tostr)(),
 		 VALUE sep, int rank )
 {
   VALUE str=Qnil, tmp;
-  int max_col = 77;
-  int sep_len = RSTRING_LEN(sep);
+  shape_t max_col = 77;
+  shape_t sep_len = RSTRING_LEN(sep);
 
   if (n>0)
     (*tostr)(&str,p2);
@@ -591,7 +600,7 @@ VALUE
  na_make_inspect(VALUE val)
 {
   int   i, ii, rank, count_line=0, max_line=10;
-  int  *si;
+  shape_t  *si;
   struct NARRAY *ary;
   struct slice *s1;
 
@@ -603,7 +612,7 @@ VALUE
   /* Allocate Structure */
   rank = ary->rank;
   s1 = ALLOCA_N(struct slice, rank+1);
-  si = ALLOCA_N(int,rank);
+  si = ALLOCA_N(shape_t,rank);
   na_set_slice_1obj(rank,s1,ary->shape);
 
   /* Iteration */

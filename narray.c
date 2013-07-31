@@ -32,6 +32,7 @@ const int na_sizeof[NA_NTYPES+1] = {
   sizeof(u_int8_t),
   sizeof(int16_t),
   sizeof(int32_t),
+  sizeof(int64_t),
   sizeof(float),
   sizeof(double),
   sizeof(scomplex),
@@ -43,14 +44,15 @@ const int na_sizeof[NA_NTYPES+1] = {
 const char *na_typestring[] = {
   "none",
   "byte",	/* 1 */
-  "sint",	/* 2 */
-  "int",	/* 3 */
-  "sfloat",	/* 4 */
-  "float",	/* 5 */
-  "scomplex",	/* 6 */
-  "complex",	/* 7 */
-  "object",	/* 8 */
-  "ntypes"	/* 9 */
+  "int16",	/* 2 */
+  "int32",	/* 3 */
+  "int64",	/* 4 */
+  "sfloat",	/* 5 */
+  "float",	/* 6 */
+  "scomplex",	/* 7 */
+  "complex",	/* 8 */
+  "object",	/* 9 */
+  "ntypes"	/* 10 */
 };
 
 #ifdef NARRAY_GC
@@ -78,7 +80,7 @@ void na_xfree(void *ptr)
 static void
  na_mark_obj(struct NARRAY *ary)
 {
-  int i;
+  shape_t i;
   VALUE *ptr;
 
   ptr = (VALUE*) ary->ptr;
@@ -117,10 +119,11 @@ static void
 
 /* allocation of NARRAY */
 struct NARRAY*
- na_alloc_struct(int type, int rank, int *shape)
+ na_alloc_struct(int type, int rank, shape_t *shape)
 {
-  int total=1, total_bak;
-  int i, memsz;
+  shape_t total=1, total_bak;
+  int i;
+  shape_t memsz;
   struct NARRAY *ary;
 
   for (i=0; i<rank; ++i) {
@@ -132,7 +135,7 @@ struct NARRAY*
     }
     total_bak = total;
     total *= shape[i];
-    if (total < 1 || total > 2147483647 || total/shape[i] != total_bak) {
+    if (total < 1 || (total >> (sizeof(shape_t)*8-2)) > 0 || total/shape[i] != total_bak) {
       rb_raise(rb_eArgError, "array size is too large");
     }
   }
@@ -148,8 +151,7 @@ struct NARRAY*
   }
   else {
     memsz = na_sizeof[type] * total;
-
-    if (memsz < 1 || memsz > 2147483647 || memsz/na_sizeof[type] != total) {
+    if (memsz < 1 || (memsz >> (sizeof(shape_t)*8-2)) > 0 || memsz/na_sizeof[type] != total) {
       rb_raise(rb_eArgError, "allocation size is too large");
     }
 
@@ -160,7 +162,7 @@ struct NARRAY*
 #endif
 
     ary        = ALLOC(struct NARRAY);
-    ary->shape = ALLOC_N(int,  rank);
+    ary->shape = ALLOC_N(shape_t,  rank);
     ary->ptr   = ALLOC_N(char, memsz);
 
     ary->rank  = rank;
@@ -240,7 +242,7 @@ static VALUE
 
 
 VALUE
- na_make_object(int type, int rank, int *shape, VALUE klass)
+ na_make_object(int type, int rank, shape_t *shape, VALUE klass)
 {
   struct NARRAY *na;
 
@@ -257,7 +259,7 @@ VALUE
 VALUE
  na_make_scalar(VALUE obj, int type)
 {
-  static int shape=1;
+  static shape_t shape=1;
   VALUE v;
   struct NARRAY *ary;
 
@@ -292,7 +294,7 @@ struct NARRAY*
     rb_raise(rb_eRuntimeError, "cannot create NArrayRefer of Empty NArray");
 
   ary        = ALLOC(struct NARRAY);
-  ary->shape = ALLOC_N(int, orig->rank);
+  ary->shape = ALLOC_N(shape_t, orig->rank);
   ary->ptr   = orig->ptr;
   ary->rank  = orig->rank;
   ary->total = orig->total;
@@ -343,15 +345,16 @@ void
 static VALUE
  na_new2(int argc, VALUE *argv, int type, VALUE klass)
 {
-  int i, *shape;
+  int i;
+  shape_t *shape;
   struct NARRAY *ary;
   VALUE v;
 
   if (argc == 0)
     rb_raise(rb_eArgError, "Argument required");
 
-  shape = ALLOCA_N(int,argc);
-  for (i=0; i<argc; ++i) shape[i]=NUM2INT(argv[i]);
+  shape = ALLOCA_N(shape_t,argc);
+  for (i=0; i<argc; ++i) shape[i]=NUM2SHAPE(argv[i]);
 
   v = na_make_object(type,argc,shape,klass);
   GetNArray(v,ary);
@@ -419,6 +422,11 @@ static VALUE
 static VALUE
  na_s_new_int(int argc, VALUE *argv, VALUE klass)
 { return na_new2(argc, argv, NA_LINT, klass); }
+
+/* class method: llint(size1,size2,...,sizeN) */
+static VALUE
+ na_s_new_llint(int argc, VALUE *argv, VALUE klass)
+{ return na_new2(argc, argv, NA_LLINT, klass); }
 
 /* class method: sfloat(size1,size2,...,sizeN) */
 static VALUE
@@ -604,7 +612,8 @@ static VALUE
 {
   struct NARRAY *ary;
   VALUE v;
-  int i, type, len=1, str_len, *shape, rank=argc-1;
+  int i, type, rank=argc-1;
+  shape_t len=1, str_len, *shape;
 
   if (argc < 1)
     rb_raise(rb_eArgError, "Type and Size Arguments required");
@@ -615,15 +624,15 @@ static VALUE
 
   if (argc == 1) {
     rank  = 1;
-    shape = ALLOCA_N(int,rank);
+    shape = ALLOCA_N(shape_t,rank);
     if ( str_len % na_sizeof[type] != 0 )
       rb_raise(rb_eArgError, "string size mismatch");
     shape[0] = str_len / na_sizeof[type];
   }
   else {
-    shape = ALLOCA_N(int,rank);
+    shape = ALLOCA_N(shape_t,rank);
     for (i=0; i<rank; ++i)
-      len *= shape[i] = NUM2INT(argv[i+1]);
+      len *= shape[i] = NUM2SHAPE(argv[i+1]);
     len *= na_sizeof[type];
     if ( len != str_len )
       rb_raise(rb_eArgError, "size mismatch");
@@ -654,13 +663,14 @@ static VALUE
  na_to_binary(VALUE self)
 {
   struct NARRAY *a1, *a2;
-  int i, *shape, rank;
+  int i, rank;
+  shape_t *shape;
   VALUE v;
 
   GetNArray(self,a1);
 
   rank = a1->rank+1;
-  shape = ALLOCA_N(int,rank);
+  shape = ALLOCA_N(shape_t,rank);
   shape[0] = na_sizeof[a1->type];
   for (i=1; i<rank; ++i)
     shape[i] = a1->shape[i-1];
@@ -678,7 +688,8 @@ static VALUE
  na_to_type_as_binary(VALUE self, VALUE vtype)
 {
   struct NARRAY *a1, *a2;
-  int size, total, type;
+  shape_t size, total;
+  int type;
   VALUE v;
 
   type = na_get_typecode(vtype);
@@ -698,7 +709,7 @@ static VALUE
 
 
 static void
- na_to_string_binary(int n, char *p1, int i1, char *p2, int i2)
+ na_to_string_binary(shape_t n, char *p1, shape_t i1, char *p2, shape_t i2)
 {
   for (; n>0; --n) {
     *(VALUE*)p1 = rb_str_new(p2,i2);
@@ -795,8 +806,8 @@ static VALUE
   int i;
   char buf[256];
   const char *classname;
-  const char *ref = "%s(ref).%s(%i";
-  const char *org = "%s.%s(%i";
+  const char *ref = "%s(ref).%s(%zd";
+  const char *org = "%s.%s(%zd";
 
   GetNArray(self,ary);
   classname = rb_class2name(CLASS_OF(self));
@@ -811,7 +822,7 @@ static VALUE
 	    classname, na_typestring[ary->type], ary->shape[0]);
     rb_str_cat(str,buf,strlen(buf));
     for (i=1; i<ary->rank; ++i) {
-      sprintf(buf,",%i",ary->shape[i]);
+      sprintf(buf,",%zd",ary->shape[i]);
       rb_str_cat(str,buf,strlen(buf));
     }
     rb_str_cat(str,")",1);
@@ -826,8 +837,9 @@ static VALUE
 static void
  na_reshape(int argc, VALUE *argv, struct NARRAY *ary, VALUE self)
 {
-  int *shape, class_dim;
-  int  i, total=1, unfixed=-1;
+  shape_t *shape, total=1;
+  int *shrink;
+  int i, class_dim, unfixed=-1;
   VALUE klass;
 
   if (ary->total==0)
@@ -837,20 +849,20 @@ static void
   class_dim = NUM2INT(rb_const_get(klass, na_id_class_dim));
 
   if (argc == 0) {  /* trim ranks of size=1 */
-    shape = ALLOCA_N(int,ary->rank+1);
-    for (i=0; i<class_dim; ++i) shape[i]=0;
-    for (   ; i<ary->rank; ++i) shape[i]=1;
-    na_shrink_rank( self, class_dim, shape );
+    shrink = ALLOCA_N(int,ary->rank+1);
+    for (i=0; i<class_dim; ++i) shrink[i]=0;
+    for (   ; i<ary->rank; ++i) shrink[i]=1;
+    na_shrink_rank( self, class_dim, shrink );
     if (ary->rank==0) ary->rank=1;
     return;
   }
 
   /* get shape from argument */
-  shape = ALLOC_N(int,argc);
+  shape = ALLOC_N(shape_t,argc);
   for (i=0; i<argc; ++i)
     switch(TYPE(argv[i])) {
     case T_FIXNUM:
-      total *= shape[i] = NUM2INT(argv[i]);
+      total *= shape[i] = NUM2SHAPE(argv[i]);
       break;
     case T_TRUE:
       unfixed = i;
@@ -926,7 +938,8 @@ static VALUE
 static void
  na_newdim(int argc, VALUE *argv, struct NARRAY *ary)
 {
-  int *shape, *count;
+  shape_t *shape;
+  int *count;
   int  i, j;
 
   if (argc==0)
@@ -949,7 +962,7 @@ static void
     ++count[j];
   }
   /* extend shape shape */
-  shape = ALLOC_N(int,ary->rank+argc);
+  shape = ALLOC_N(shape_t,ary->rank+argc);
   for (j=i=0; i<ary->rank; ++i) {
     while (count[i]-->0) shape[j++] = 1;
     shape[j++] = ary->shape[i];
@@ -1011,13 +1024,13 @@ VALUE na_fill(VALUE self, volatile VALUE val)
 VALUE
  na_indgen(int argc, VALUE *argv, VALUE self)
 {
-  int start=0, step=1;
+  shape_t start=0, step=1;
   struct NARRAY *ary;
 
   if (argc>0) {
-    start = NUM2INT(argv[0]);
+    start = NUM2SHAPE(argv[0]);
     if (argc==2)
-      step = NUM2INT(argv[1]);
+      step = NUM2SHAPE(argv[1]);
     else
       if (argc>2)
 	rb_raise(rb_eArgError, "wrong # of arguments (%d for <= 2)", argc);
@@ -1037,7 +1050,7 @@ static VALUE
  na_where2(volatile VALUE obj)
 {
   VALUE v1, v0;
-  int  n, i, n1, n0;
+  shape_t  n, i, n1, n0;
   char *c;
   int32_t *idx1, *idx0;
   struct NARRAY *ary, *a1, *a0; /* a1=true, a0=false */
@@ -1092,7 +1105,8 @@ static VALUE
 static VALUE
  na_each(VALUE obj)
 {
-  int i, sz;
+  shape_t i;
+  int sz;
   VALUE v;
   struct NARRAY *ary;
   char *p;
@@ -1117,7 +1131,8 @@ static VALUE
 static VALUE
  na_collect(VALUE obj1)
 {
-  int i, sz;
+  shape_t i;
+  int sz;
   VALUE v, obj2;
   struct NARRAY *a1, *a2;
   char *p1, *p2;
@@ -1148,7 +1163,8 @@ static VALUE
 static VALUE
  na_collect_bang(VALUE self)
 {
-  int i, sz;
+  shape_t i;
+  int sz;
   VALUE v;
   struct NARRAY *a1;
   char *p1;
@@ -1175,6 +1191,7 @@ static VALUE
 void
  Init_narray()
 {
+
     ID id_Complex = rb_intern("Complex");
 
     if (!rb_const_defined( rb_cObject, id_Complex)) {
@@ -1191,6 +1208,7 @@ void
     rb_define_singleton_method(cNArray,"byte",na_s_new_byte,-1);
     rb_define_singleton_method(cNArray,"sint",na_s_new_sint,-1);
     rb_define_singleton_method(cNArray,"lint",na_s_new_int,-1);
+    rb_define_singleton_method(cNArray,"llint",na_s_new_llint,-1);
     rb_define_singleton_method(cNArray,"int", na_s_new_int,-1);
     rb_define_singleton_method(cNArray,"sfloat",na_s_new_sfloat,-1);
     rb_define_singleton_method(cNArray,"dfloat",na_s_new_float,-1);
@@ -1251,9 +1269,11 @@ void
     rb_define_method(cNArray, "to_string", na_to_string, 0);
 
     rb_define_const(cNArray, "NARRAY_VERSION", rb_str_new2(NARRAY_VERSION));
+    rb_define_const(cNArray, "SUPPORT_BIGMEM", Qtrue);
     rb_define_const(cNArray, "BYTE", INT2FIX(NA_BYTE));
     rb_define_const(cNArray, "SINT", INT2FIX(NA_SINT));
     rb_define_const(cNArray, "LINT", INT2FIX(NA_LINT));
+    rb_define_const(cNArray, "LLINT", INT2FIX(NA_LLINT));
     rb_define_const(cNArray, "INT",  INT2FIX(NA_LINT));
     rb_define_const(cNArray, "SFLOAT", INT2FIX(NA_SFLOAT));
     rb_define_const(cNArray, "DFLOAT", INT2FIX(NA_DFLOAT));

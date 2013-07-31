@@ -49,7 +49,7 @@ static ID id_lu, id_pivot;
 static void
 na_loop_linalg( int nd, char *p1, char *p2, char *p3,
 		struct slice *s1, struct slice *s2, struct slice *s3,
-		void (*func)(), int *shape, int type )
+		void (*func)(), shape_t *shape, int type )
 {
   int i;
   int ps1 = s1[0].pstep;
@@ -90,10 +90,10 @@ na_loop_linalg( int nd, char *p1, char *p2, char *p3,
   }
 }
 
-static int
-na_shape_total( int n, int *shape )
+static shape_t
+na_shape_total( int n, shape_t *shape )
 {
-  int total=1;
+  shape_t total=1;
 
   for (; n>0; --n)
     total *= *(shape++);
@@ -106,11 +106,11 @@ na_exec_linalg( struct NARRAY *a1, struct NARRAY *a2, struct NARRAY *a3,
 		int ncd1, int ncd2, int ncd3, void (*func)() )
 {
   int   ndim, ncd, nsz1, nsz2, nsz3;
-  int  *itr, *shp1, *shp2, *shp3;
+  shape_t  *itr, *shp1, *shp2, *shp3;
   struct slice *s1, *s2, *s3;
 
-  ncd  = na_max3(ncd1,ncd2,ncd3); /* class dim */
-  ndim = na_max3(a1->rank-ncd1, a2->rank-ncd2, a3->rank-ncd3) + ncd;
+  ncd  = NA_MAX3(ncd1,ncd2,ncd3); /* class dim */
+  ndim = NA_MAX3(a1->rank-ncd1, a2->rank-ncd2, a3->rank-ncd3) + ncd;
 
   NA_ALLOC_SLICE(s1,(ndim+1)*3,shp1,ndim*4);
   shp2 = &shp1[ndim];
@@ -145,9 +145,9 @@ na_exec_linalg( struct NARRAY *a1, struct NARRAY *a2, struct NARRAY *a3,
 
 
 static int
-na_lu_fact_func_body(int ni, char *a, char *idx, int *shape, int type, char *buf)
+na_lu_fact_func_body(int ni, char *a, char *idx, shape_t *shape, int type, char *buf)
 {
-  int i, j, k;
+  shape_t i, j, k;
   int imax;
 
   char *amax, *rtmp;
@@ -158,12 +158,12 @@ na_lu_fact_func_body(int ni, char *a, char *idx, int *shape, int type, char *buf
   na_funcset_t *r = &na_funcset[na_cast_real[type]];
 
   int status = 0;
-  int n = shape[0];
-  int relmsz = r->elmsz;
-  int felmsz = f->elmsz;
-  int rowsz  = felmsz*n;
-  int matsz  = rowsz*n;
-  int diagsz = rowsz + felmsz;
+  shape_t n = shape[0];
+  shape_t relmsz = r->elmsz;
+  shape_t felmsz = f->elmsz;
+  shape_t rowsz  = felmsz*n;
+  shape_t matsz  = rowsz*n;
+  shape_t diagsz = rowsz + felmsz;
 
   v    = buf + rowsz;
   amax = v   + relmsz*n;
@@ -260,11 +260,12 @@ na_lu_fact_func_body(int ni, char *a, char *idx, int *shape, int type, char *buf
 
 
 static int
- na_lu_fact_func(int ni, char *a, char *idx, int *shape, int type)
+ na_lu_fact_func(int ni, char *a, char *idx, shape_t *shape, int type)
 {
   volatile VALUE val;
   char *buf;
-  int status, size, n=shape[0];
+  int status;
+  shape_t size, n=shape[0];
 
   if (type==NA_ROBJ) {
     VALUE *mem;
@@ -290,7 +291,8 @@ static int
 static VALUE
  na_lu_fact_bang(VALUE self)
 { 
-  int i, total, n, sz, stat;
+  shape_t i, total, n;
+  int sz, stat;
   struct NARRAY *ary;
   VALUE piv;
   char *ptr, *idx;
@@ -341,7 +343,7 @@ static VALUE
 static void
 na_lu_pivot_func( int ni,
 		  char *x, int ps1, char *y, int ps2, char *idx, int ps3,
-		  int *shape, int type )
+		  shape_t *shape, int type )
 {
   int i, n, sz;
   char *xi;
@@ -367,17 +369,17 @@ na_lu_pivot_func( int ni,
 static void
 na_lu_solve_func_body( int ni,
 		       char *x, int ps1,  char *a, int ps2,
-		       int *shape, int type, char *buf )
+		       shape_t *shape, int type, char *buf )
 {
   char *aii, *a0i, *xx, *xi;
-  int i,k;
+  shape_t i,k;
   na_funcset_t *f = &na_funcset[type];
-  int n = shape[1];
+  shape_t n = shape[1];
   int sz = na_sizeof[type];
-  int xsz = shape[0] * sz;
-  int rowsz = sz * n;
-  int matsz = rowsz * n;
-  int diagsz = rowsz + sz;
+  shape_t xsz = shape[0] * sz;
+  shape_t rowsz = sz * n;
+  shape_t matsz = rowsz * n;
+  shape_t diagsz = rowsz + sz;
 
   for (; ni>0; --ni) {
 
@@ -426,15 +428,15 @@ na_lu_solve_func_body( int ni,
 static void
 na_lu_solve_func( int ni,
 		  char *z, int ps,  char *x, int ps1,  char *a, int ps2,
-		  int *shape, int type )
+		  shape_t *shape, int type )
 {
   volatile VALUE val;
   char *buf;
-  int size;
+  shape_t size;
 
   if (type==NA_ROBJ) {
     VALUE *mem;
-    int i;
+    shape_t i;
     size = shape[1];
     mem = ALLOC_N(VALUE, size);
     for (i=0; i<size; i++) mem[i] = Qnil;
@@ -452,9 +454,9 @@ na_lu_solve_func( int ni,
 
 
 static void
-na_shape_max2(int ndim, int *shape, int n1, int *shape1, int n2, int *shape2)
+na_shape_max2(int ndim, shape_t *shape, int n1, shape_t *shape1, int n2, shape_t *shape2)
 {
-  int *tmp;
+  shape_t *tmp;
   int  i;
 
   if (n1 < n2) {
@@ -485,8 +487,8 @@ na_shape_max2(int ndim, int *shape, int n1, int *shape1, int n2, int *shape2)
 static VALUE
 na_lu_solve(VALUE self, volatile VALUE other)
 {
-  int  n, ndim;
-  int *shape;
+  int  ndim;
+  shape_t n, *shape;
   struct NARRAY *a1, *a2, *l, *p;
   VALUE pv, obj, klass;
   volatile VALUE lu;
@@ -511,10 +513,10 @@ na_lu_solve(VALUE self, volatile VALUE other)
 
   n = l->shape[0];
   if (n != a1->shape[1])
-    rb_raise(rb_eTypeError,"size mismatch (%i!=%i)",n,a1->shape[1]);
+    rb_raise(rb_eTypeError,"size mismatch (%zd!=%zd)",n,a1->shape[1]);
 
   ndim  = NA_MAX(l->rank, a1->rank);
-  shape = ALLOCA_N(int, ndim);
+  shape = ALLOCA_N(shape_t, ndim);
 
   shape[0] = a1->shape[0];
   na_shape_max2( ndim-1, shape+1, a1->rank-1, a1->shape+1,
@@ -527,8 +529,8 @@ na_lu_solve(VALUE self, volatile VALUE other)
   na_exec_linalg( a2, a2, l, 2, 2, 2, na_lu_solve_func );
 
   if (klass==cNVector) {
-    shape = ALLOC_N(int, ndim-1);
-    memcpy(shape,a2->shape+1,sizeof(int)*(ndim-1));
+    shape = ALLOC_N(shape_t, ndim-1);
+    memcpy(shape,a2->shape+1,sizeof(shape_t)*(ndim-1));
     xfree(a2->shape);
     a2->shape = shape;
     --(a2->rank);
@@ -560,12 +562,12 @@ na_lu_init(VALUE self, VALUE lu, VALUE piv)
 	     l->rank, p->rank);
 
   if (l->shape[0] != l->shape[1])
-    rb_raise(rb_eRuntimeError,"LU matrix (%i,%i) is not square",
+    rb_raise(rb_eRuntimeError,"LU matrix (%zd,%zd) is not square",
 	     l->shape[0], l->shape[1]);
 
   for (i=1; i<l->rank; ++i)
     if (l->shape[i] != p->shape[i-1])
-      rb_raise(rb_eRuntimeError,"array size mismatch %i!=%i at %i",
+      rb_raise(rb_eRuntimeError,"array size mismatch %zd!=%zd at %i",
 	       l->shape[i], p->shape[i-1], i);
 
   rb_ivar_set(self, id_lu, lu);

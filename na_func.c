@@ -12,37 +12,22 @@
 #include "narray.h"
 #include "narray_local.h"
 
-int
- na_max3(int a, int b, int c)
-{
-  int m;
-
-  if ((a) > (b))
-    m = a;
-  else
-    m = b;
-  if ((c) > m)
-    m = c;
-  return m;
-}
-
-
 void
-  na_shape_max3(int ndim, int *max_shp, int *shp1, int *shp2, int *shp3)
+  na_shape_max3(int ndim, shape_t *max_shp, shape_t *shp1, shape_t *shp2, shape_t *shp3)
 {
   int i;
 
   for (i=0; i<ndim; ++i) {
-    max_shp[i] = na_max3(shp1[i], shp2[i], shp3[i]);
+    max_shp[i] = NA_MAX3(shp1[i], shp2[i], shp3[i]);
   }
 }
 
 
 /* initialize slice structure */
-void na_init_slice( struct slice *s, int rank, int *shape, int elmsz )
+void na_init_slice( struct slice *s, int rank, shape_t *shape, int elmsz )
 {
-  int r, i, b;
-  na_index_t *idx;
+  int r, b;
+  shape_t i, *idx;
 
   /*
   if (rank<1)
@@ -91,8 +76,8 @@ static void
 {
   int *si;
   int  i;
-  int  ps1 = s1[0].pstep;
-  int  ps2 = s2[0].pstep;
+  shape_t  ps1 = s1[0].pstep;
+  shape_t  ps2 = s2[0].pstep;
 
   i  = nd;
   si = ALLOCA_N(int,nd);
@@ -125,9 +110,9 @@ static void
 		    void (*func)() )
 {
   int i;
-  int ps1 = s1[0].pstep;
-  int ps2 = s2[0].pstep;
-  int ps3 = s3[0].pstep;
+  shape_t ps1 = s1[0].pstep;
+  shape_t ps2 = s2[0].pstep;
+  shape_t ps3 = s3[0].pstep;
   int *si;
 
   si = ALLOCA_N(int,nd);
@@ -164,11 +149,12 @@ void na_loop_index_ref( struct NARRAY *a1, struct NARRAY *a2,
 			struct slice *s1, struct slice *s2, void (*func)() )
 {
   char *p1, *p2;
-  int nr, i, ii;
-  int ps1 = s1[0].pstep;
-  int ps2 = s2[0].pstep;
+  int nr, i;
+  shape_t ii;
+  shape_t ps1 = s1[0].pstep;
+  shape_t ps2 = s2[0].pstep;
   int *si;
-  na_index_t *idx;
+  shape_t *idx;
 
   /*
   int copy;
@@ -231,10 +217,10 @@ void na_loop_general( struct NARRAY *a1, struct NARRAY *a2,
 {
   char *p1, *p2;
   int nr, i, ii;
-  int ps1 = s1[0].pstep;
-  int ps2 = s2[0].pstep;
+  shape_t ps1 = s1[0].pstep;
+  shape_t ps2 = s2[0].pstep;
   int *si;
-  na_index_t *idx1, *idx2;
+  shape_t *idx1, *idx2;
 
   /* Initialize */
   nr = i = a1->rank;
@@ -304,7 +290,7 @@ void na_loop_general( struct NARRAY *a1, struct NARRAY *a2,
 
 
 void
- na_shape_copy( int ndim, int *shape, struct NARRAY *a )
+ na_shape_copy( int ndim, shape_t *shape, struct NARRAY *a )
 {
   int i;
 
@@ -316,7 +302,7 @@ void
 
 
 void
- na_set_slice_1obj( int ndim, struct slice *slc, int *shape )
+ na_set_slice_1obj( int ndim, struct slice *slc, shape_t *shape )
 {
   int i;
 
@@ -333,7 +319,7 @@ void
 
 static int
  na_set_slice_2obj( int ndim, struct slice *s1, struct slice *s2,
-		    int *shp1, int *shp2 )
+		    shape_t *shp1, shape_t *shp2 )
 {
   int i, j;
 
@@ -357,7 +343,7 @@ static int
       s1[j].step = 1;
       s2[j].step = 1;
     } else
-      rb_raise(rb_eRuntimeError, "Array size mismatch: %i != %i in %i-th dim",
+      rb_raise(rb_eRuntimeError, "Array size mismatch: %zd != %zd in %i-th dim",
 	       shp1[i], shp2[i], i);
 
     if (j<i) {
@@ -386,14 +372,14 @@ static int
 
 
 static int
- na_set_slice_check(int ary_sz, int itr_sz, int i)
+ na_set_slice_check(shape_t ary_sz, shape_t itr_sz, int i)
 {
   if ( ary_sz == itr_sz )
     return 1;
   else if ( ary_sz == 1 )
     return 0;
   else
-    rb_raise(rb_eRuntimeError, "Array size mismatch: %i != %i at %i-th dim",
+    rb_raise(rb_eRuntimeError, "Array size mismatch: %zd != %zd at %i-th dim",
 	     ary_sz, itr_sz, i);
 }
 
@@ -401,7 +387,7 @@ static int
 int
  na_set_slice_3obj( int ndim,
 		    struct slice *s1, struct slice *s2, struct slice *s3,
-		    int *shp1, int *shp2, int *shp3, int *shape )
+		    shape_t *shp1, shape_t *shp2, shape_t *shp3, shape_t *shape )
 {
   int i, j;
 
@@ -457,7 +443,7 @@ static void
  na_exec_unary(struct NARRAY *a1, struct NARRAY *a2, void (*func)())
 {
   int  ndim;
-  int *shp1, *shp2;
+  shape_t *shp1, *shp2;
   struct slice *s1, *s2;
 
   /* empty check */
@@ -490,13 +476,13 @@ static void
 		 struct NARRAY *a3, void (*func)() )
 {
   int   ndim;
-  int  *itr, *shp1, *shp2, *shp3;
+  shape_t *itr, *shp1, *shp2, *shp3;
   struct slice *s1, *s2, *s3;
 
   /* empty check */
   if (a1->total==0) return; /* do nothing */
 
-  ndim = na_max3(a1->rank, a2->rank, a3->rank);
+  ndim = NA_MAX3(a1->rank, a2->rank, a3->rank);
 
   NA_ALLOC_SLICE(s1,(ndim+1)*3,shp1,ndim*4);
   shp2 = &shp1[ndim];
@@ -522,7 +508,7 @@ static void
 
 
 static void
- na_shape_max_2obj(int ndim, int *shape, struct NARRAY *a1, struct NARRAY *a2)
+ na_shape_max_2obj(int ndim, shape_t *shape, struct NARRAY *a1, struct NARRAY *a2)
 {
   struct NARRAY *tmp;
   int  i;
@@ -552,14 +538,14 @@ static VALUE
 		       int type, VALUE klass)
 {
   int  ndim;
-  int *shape;
+  shape_t *shape;
 
   /* empty check */
   if ( a1->total==0 || a2->total==0 )
     return na_make_empty(type, klass); /* return empty */
 
   ndim  = NA_MAX(a1->rank, a2->rank);
-  shape = ALLOCA_N(int, ndim);
+  shape = ALLOCA_N(shape_t, ndim);
   na_shape_max_2obj( ndim, shape, a1, a2 );
 
   return na_make_object( type, ndim, shape, klass );
@@ -929,7 +915,7 @@ static VALUE
  na_not_equal(VALUE obj1, VALUE obj2)
 {
   VALUE obj;
-  int  i;  char *p;
+  shape_t i;  char *p;
   struct NARRAY *a;
 
   obj = na_compare_func( obj1, obj2, EqlFuncs );
@@ -946,7 +932,7 @@ static VALUE
 static VALUE
  na_greater_than(VALUE self, VALUE obj2)
 {
-  int  i;  char *p;
+  shape_t i;  char *p;
   struct NARRAY *a;
 
   self = na_compare_func( self, obj2, CmpFuncs );
@@ -964,7 +950,7 @@ static VALUE
  na_greater_equal(VALUE obj1, VALUE obj2)
 {
   VALUE obj;
-  int  i;  char *p;
+  shape_t i;  char *p;
   struct NARRAY *a;
 
   obj = na_compare_func( obj1, obj2, CmpFuncs );
@@ -983,7 +969,7 @@ static VALUE
  na_less_than(VALUE obj1, VALUE obj2)
 {
   VALUE obj;
-  int  i;  char *p;
+  shape_t i;  char *p;
   struct NARRAY *a;
 
   obj = na_compare_func( obj1, obj2, CmpFuncs );
@@ -1002,7 +988,7 @@ static VALUE
  na_less_equal(VALUE obj1, VALUE obj2)
 {
   VALUE obj;
-  int  i;  char *p;
+  shape_t i;  char *p;
   struct NARRAY *a;
 
   obj = na_compare_func( obj1, obj2, CmpFuncs );
@@ -1023,7 +1009,7 @@ static VALUE
  ------- Sum, Min, Max, Transpose --------
 */
 VALUE
- rb_range_beg_len(VALUE range, long *begp, long *lenp, long len, int err );
+ rb_range_beg_len(VALUE range, shape_t *begp, shape_t *lenp, shape_t len, int err );
 
 static int
  na_arg_to_rank(int argc, VALUE *argv, int rankc, int *rankv, int flag)
@@ -1035,7 +1021,7 @@ static int
 */
 {
   int i, j, c=0;
-  long r, n;
+  shape_t r, n;
   VALUE v;
 
   if (flag==0)
@@ -1048,7 +1034,7 @@ static int
     v = argv[i];
 
     if (TYPE(v)==T_FIXNUM) {
-      r = NUM2INT(v);
+      r = NUM2SHAPE(v);
       if (r<0) r += rankc;     /* negative for from end */
       if (r<0 || r>=rankc)
         rb_raise(rb_eArgError, "rank %ld out of range", r);
@@ -1117,14 +1103,15 @@ static VALUE
  na_transpose(int argc, VALUE *argv, VALUE self)
 {
   struct NARRAY *a2;
-  int i, rankc, *rankv, *shape;
+  int i, rankc, *rankv;
+  shape_t *shape;
   VALUE obj;
 
   GetNArray(self,a2);
 
   /* Parse Argument */
-  rankv = ALLOC_N( int, NA_MAX_RANK*2 );
-  shape = &rankv[NA_MAX_RANK];
+  rankv = ALLOC_N( int, NA_MAX_RANK);
+  shape = ALLOC_N( shape_t, NA_MAX_RANK);
   rankc = na_arg_to_rank( argc, argv, a2->rank, rankv, 1 );
   if (rankc > a2->rank)
     rb_raise(rb_eArgError, "too many args");
@@ -1132,7 +1119,7 @@ static VALUE
     rankv[rankc] = rankc;
 
   /* Argument Check */
-  MEMZERO(shape,int,rankc);
+  MEMZERO(shape,shape_t,rankc);
   for (i=0; i<rankc; ++i) {
     if (shape[rankv[i]] != 0)
       rb_raise(rb_eArgError,"rank doublebooking");
@@ -1146,6 +1133,7 @@ static VALUE
 
   na_transpose_bifunc( NA_STRUCT(obj), a2, rankv );
   xfree(rankv);
+  xfree(shape);
   return obj;
 }
 
@@ -1153,7 +1141,7 @@ static VALUE
 
 
 static void
- na_accum_set_shape(int *itr_shape, int rank, int *ary_shape,
+ na_accum_set_shape(shape_t *itr_shape, int rank, shape_t *ary_shape,
 		    int rankc, int *rankv)
 {
   int i;
@@ -1179,7 +1167,7 @@ static void
 static void
  na_zero_obj(struct NARRAY *ary)
 {
-  int i;
+  shape_t i;
   VALUE zero = INT2FIX(0);
   VALUE *v = (VALUE*)ary->ptr;
 
@@ -1199,16 +1187,17 @@ static void
 static VALUE
  na_sum_body(int argc, VALUE *argv, VALUE self, int flag)
 {
-  int *shape, rankc, *rankv, cl_dim;
+  shape_t *shape;
+  int rankc, *rankv, cl_dim;
   struct NARRAY *a1, *a2;
   VALUE obj, klass;
 
   GetNArray(self,a1);
 
-  rankv = ALLOC_N(int,a1->rank*2);
+  rankv = ALLOC_N(int,a1->rank);
   rankc = na_arg_to_rank( argc, argv, a1->rank, rankv, 0 );
 
-  shape = &rankv[a1->rank];
+  shape = ALLOC_N(shape_t,a1->rank);
   na_accum_set_shape( shape, a1->rank, a1->shape, rankc, rankv );
 
   klass  = CLASS_OF(self);
@@ -1226,6 +1215,7 @@ static VALUE
     obj = na_shrink_rank(obj,cl_dim,rankv);
 
   xfree(rankv);
+  xfree(shape);
   return obj;
 }
 
@@ -1244,17 +1234,18 @@ static VALUE
 static VALUE
  na_prod_body(int argc, VALUE *argv, VALUE self, int flag)
 {
-  int *shape, rankc, *rankv, cl_dim;
+  shape_t *shape;
+  int rankc, *rankv, cl_dim;
   struct NARRAY *a1, *a2;
   VALUE obj, klass;
   int32_t one = 1;
 
   GetNArray(self,a1);
 
-  rankv = ALLOC_N(int,a1->rank*2);
+  rankv = ALLOC_N(int,a1->rank);
   rankc = na_arg_to_rank( argc, argv, a1->rank, rankv, 0 );
 
-  shape = &rankv[a1->rank];
+  shape = ALLOC_N(shape_t,a1->rank);
   na_accum_set_shape( shape, a1->rank, a1->shape, rankc, rankv );
 
   klass  = CLASS_OF(self);
@@ -1265,7 +1256,7 @@ static VALUE
   obj = na_make_object(a1->type,a1->rank,shape,klass);
   GetNArray(obj,a2);
 
-  SetFuncs[a2->type][NA_LINT](a2->total, a2->ptr, na_sizeof[a2->type], &one, 0);
+  SetFuncs[a2->type][NA_SIZE](a2->total, a2->ptr, na_sizeof[a2->type], &one, 0);
 
   na_exec_unary( a2, a1, MulUFuncs[a1->type] );
 
@@ -1273,6 +1264,7 @@ static VALUE
     obj = na_shrink_rank(obj,cl_dim,rankv);
 
   xfree(rankv);
+  xfree(shape);
   return obj;
 }
 
@@ -1288,7 +1280,7 @@ static VALUE
 {
   VALUE ans, op_klass;
   int  rank, cl_dim;
-  int *dst_shape, *max_shape;
+  shape_t *dst_shape, *max_shape;
   int  rankc, *rankv;
   int  type;
   struct NARRAY *a1, *a2;
@@ -1301,10 +1293,10 @@ static VALUE
 
   rank = NA_MAX(a1->rank,a2->rank);
 
-  rankv = ALLOC_N(int,rank*3);
+  rankv = ALLOC_N(int,rank);
   rankc = na_arg_to_rank( argc, argv, rank, rankv, 0 );
 
-  max_shape = &rankv[rank];
+  max_shape = ALLOC_N(shape_t,rank*2);
   na_shape_max_2obj(rank,max_shape,a1,a2);
 
   dst_shape = &max_shape[rank];
@@ -1328,6 +1320,7 @@ static VALUE
     ans = na_shrink_rank(ans,cl_dim,rankv);
 
   xfree(rankv);
+  xfree(max_shape);
   return ans;
 }
 
@@ -1455,15 +1448,16 @@ static VALUE
  na_minmax_func(int argc, VALUE *argv, VALUE self, na_ufunc_t funcs)
 {
   VALUE obj, klass;
-  int *shape, rankc, *rankv, cl_dim;
+  shape_t *shape;
+  int rankc, *rankv, cl_dim;
   struct NARRAY *a1, *a2;
 
   GetNArray(self,a1);
 
-  rankv = ALLOC_N(int,a1->rank*2);
+  rankv = ALLOC_N(int,a1->rank);
   rankc = na_arg_to_rank( argc, argv, a1->rank, rankv, 0 );
 
-  shape = &rankv[a1->rank];
+  shape = ALLOC_N(shape_t,a1->rank);
   na_accum_set_shape( shape, a1->rank, a1->shape, rankc, rankv );
 
   klass  = CLASS_OF(self);
@@ -1479,6 +1473,7 @@ static VALUE
   obj = na_shrink_rank(obj, cl_dim, rankv);
 
   xfree(rankv);
+  xfree(shape);
   return obj;
 }
 
@@ -1498,7 +1493,8 @@ static VALUE
 static int
  na_sort_number(int argc, VALUE *argv, struct NARRAY *a1)
 {
-  int i, nsort, rank;
+  int i, rank;
+  shape_t nsort;
 
   if (argc==0) {
     rank = a1->rank-1;
@@ -1523,7 +1519,7 @@ static VALUE
   struct NARRAY *a1, *a2;
   VALUE obj;
   int  (*func)(const void*, const void*);
-  int   i, size, step, nloop, nsort;
+  shape_t   i, size, step, nloop, nsort;
   char *ptr;
 
   GetNArray(self,a1);
@@ -1553,7 +1549,7 @@ static VALUE
 {
   struct NARRAY *a1;
   int  (*func)(const void*, const void*);
-  int   i, size, step, nloop, nsort;
+  shape_t   i, size, step, nloop, nsort;
   char *ptr;
 
   GetNArray(self,a1);
@@ -1581,10 +1577,9 @@ static VALUE
   struct NARRAY *a1, *a2;
   VALUE obj;
   int  (*func)(const void*, const void*);
-  int   i, size, nloop, nsort;
+  shape_t  i, size, nloop, nsort;
   char **ptr_ptr, **ptr_p;
   char  *ptr_ary,  *ptr_a;
-  int32_t *ptr_i;
 
   GetNArray(self,a1);
 
@@ -1608,12 +1603,21 @@ static VALUE
     ptr_p += nsort;
   }
 
-  obj = na_make_object(NA_LINT,a1->rank,a1->shape,CLASS_OF(self));
+  obj = na_make_object(NA_SIZE,a1->rank,a1->shape,CLASS_OF(self));
   GetNArray(obj,a2);
   ptr_p = ptr_ptr;
-  ptr_i = (int32_t*)(a2->ptr);
-  for (i=a2->total; i>0; --i) {
-    *(ptr_i++) = (int32_t)(*(ptr_p++)-ptr_ary)/size;
+  if ( NA_SIZE == NA_LINT ) {
+    int32_t *ptr_i;
+    ptr_i = (int32_t*)(a2->ptr);
+    for (i=a2->total; i>0; --i) {
+      *(ptr_i++) = (int32_t)(*(ptr_p++)-ptr_ary)/size;
+    }
+  } else if ( NA_SIZE == NA_LLINT ) {
+    int64_t *ptr_i;
+    ptr_i = (int64_t*)(a2->ptr);
+    for (i=a2->total; i>0; --i) {
+      *(ptr_i++) = (int64_t)(*(ptr_p++)-ptr_ary)/size;
+    }
   }
   xfree(ptr_ptr);
   return obj;

@@ -1,35 +1,40 @@
-$type_codes = %w(n B I L F D X C O)
+$type_codes = %w(n B I L G F D X C O)
 $data_types = 
- %w(none u_int8_t int16_t int32_t float double scomplex dcomplex VALUE)
+ %w(none u_int8_t int16_t int32_t int64_t float double scomplex dcomplex VALUE)
 $real_types =
- %w(none u_int8_t int16_t int32_t float double float double VALUE)
+ %w(none u_int8_t int16_t int32_t int64_t float double float double VALUE)
 $int_types  = 
- %w(none u_int8_t int16_t int32_t int32_t int32_t scomplex dcomplex VALUE)
+ %w(none u_int8_t int16_t int32_t int64_t int32_t int32_t scomplex dcomplex VALUE)
 $comp_types =
- %w(none scomplex scomplex scomplex scomplex dcomplex scomplex dcomplex VALUE)
+ %w(none scomplex scomplex scomplex dcomplex scomplex dcomplex scomplex dcomplex VALUE)
 $swap_types  = 
- %w(none u_int8_t na_size16_t na_size32_t na_size32_t na_size64_t na_size64_t na_size128_t VALUE)
+ %w(none u_int8_t na_size16_t na_size32_t na_size64_t na_size32_t na_size64_t na_size64_t na_size128_t VALUE)
 $upcast = [
-  [ 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [ 0, 1, 2, 3, 4, 5, 6, 7, 8],
-  [ 0, 2, 2, 3, 4, 5, 6, 7, 8],
-  [ 0, 3, 3, 3, 4, 5, 6, 7, 8],
-  [ 0, 4, 4, 4, 4, 5, 6, 7, 8],
-  [ 0, 5, 5, 5, 5, 5, 7, 7, 8],
-  [ 0, 6, 6, 6, 6, 7, 6, 7, 8],
-  [ 0, 7, 7, 7, 7, 7, 7, 7, 8],
-  [ 0, 8, 8, 8, 8, 8, 8, 8, 8] ]
+  [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+  [ 0, 2, 2, 3, 4, 5, 6, 7, 8, 9],
+  [ 0, 3, 3, 3, 4, 5, 6, 7, 8, 9],
+  [ 0, 4, 4, 4, 4, 5, 6, 7, 8, 9],
+  [ 0, 5, 5, 5, 5, 5, 6, 7, 8, 9],
+  [ 0, 6, 6, 6, 6, 6, 6, 8, 8, 9],
+  [ 0, 7, 7, 7, 7, 7, 8, 7, 8, 9],
+  [ 0, 8, 8, 8, 8, 8, 8, 8, 8, 9],
+  [ 0, 9, 9, 9, 9, 9, 9, 9, 9, 9] ]
 $data_obj = [
   [/[O]/,/[O]/,  "
     *p1 = rb_funcall(*p1,#id,1,*p2);"],
   [/[O]/,/[BIL]/,"
     *p1 = rb_funcall(*p1,#id,1,INT2FIX(*p2));"],
+  [/[O]/,/[G]/,"
+    *p1 = rb_funcall(*p1,#id,1,LL2NUM(*p2));"],
   [/[O]/,/[FD]/, "
     *p1 = rb_funcall(*p1,#id,1,rb_float_new(*p2));"],
   [/[O]/,/[XC]/, "
     *p1 = rb_funcall(*p1,#id,1,rb_complex_new(p2->r,p2->i));"],
   [/[BIL]/,/[O]/,"
     *p1 = NUM2INT(rb_funcall(INT2FIX(*p1),#id,1,*p2));"],
+  [/[G]/,/[O]/,"
+    *p1 = NUM2LL(rb_funcall(LL2NUM(*p1),#id,1,*p2));"],
   [/[FD]/,/[O]/, "
     *p1 = NUM2DBL(rb_funcall(rb_float_new(*p1),#id,1,*p2));"],
   [/[XC]/,/[O]/, "VALUE v=rb_funcall(rb_complex_new(p1->r,p1->i),#id,1,*p2);

@@ -297,7 +297,7 @@ EOM
 
 data = [
 ['sqrt',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = sqrt(*p2); }"]*2 +
 ["{
   typer xr=p2->r/2, xi=p2->i/2, r=hypot(xr,xi);
@@ -314,7 +314,7 @@ data = [
 [nil] ],
 
 ['sin',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = sin(*p2); }"]*2 +
 ["{
   p1->r = sin(p2->r)*cosh(p2->i);
@@ -322,7 +322,7 @@ data = [
 [nil] ],
 
 ['cos',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = cos(*p2); }"]*2 +
 ["{
   p1->r = cos(p2->r)*cosh(p2->i);
@@ -330,7 +330,7 @@ data = [
 [nil] ],
 
 ['tan',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = tan(*p2); }"]*2 +
 ["{
   typer d, th;
@@ -343,7 +343,7 @@ data = [
 [nil] ],
 
 ['sinh',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = sinh(*p2); }"]*2 +
 ["{
   p1->r = sinh(p2->r)*cos(p2->i);
@@ -352,7 +352,7 @@ data = [
 [nil] ],
 
 ['cosh',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = cosh(*p2); }"]*2 +
 ["{
   p1->r = cosh(p2->r)*cos(p2->i);
@@ -361,7 +361,7 @@ data = [
 [nil] ],
 
 ['tanh',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = tanh(*p2); }"]*2 +
 ["{
   typer d, th;
@@ -374,7 +374,7 @@ data = [
 [nil] ],
 
 ['exp',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = exp(*p2); }"]*2 +
 ["{
   typer a = exp(p2->r);
@@ -384,7 +384,7 @@ data = [
 [nil] ],
 
 ['log',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = log(*p2); }"]*2 +
 ["{
   typed x = *p2;
@@ -394,7 +394,7 @@ data = [
 [nil] ],
 
 ['log10',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = log10(*p2); }"]*2 +
 ["{
   log#code(p1,p2);
@@ -405,7 +405,7 @@ data = [
 
 
 ['log2',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = log(*p2)*M_LOG2E; }"]*2 +
 ["{
   log#code(p1,p2);
@@ -416,7 +416,7 @@ data = [
 
 
 ['asin',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = asin(*p2); }"]*2 +
 # -i * log( sqrt(1-x**2) + x*i )
 ["{
@@ -434,7 +434,7 @@ data = [
 [nil]*1 ],
 
 ['asinh',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = asinh(*p2); }"]*2 +
 # log(sqrt(x**2+1)+x)
 ["{
@@ -449,7 +449,7 @@ data = [
 [nil]*1 ],
 
 ['acos',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = acos(*p2); }"]*2 +
 # -i * log( sqrt(1-x**2)*i + x )
 ["{
@@ -469,7 +469,7 @@ data = [
 [nil]*1 ],
 
 ['acosh',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = acosh(*p2); }"]*2 +
 # log(x+sqrt(x**2-1))
 ["{
@@ -484,7 +484,7 @@ data = [
 [nil]*1 ],
 
 ['atan',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = atan(*p2); }"]*2 +
 # i/2 * log((i+x)/(i-x))
 ["{
@@ -499,7 +499,7 @@ data = [
 [nil]*1 ],
 
 ['atanh',
-[nil]*4 +
+[nil]*5 +
 ["{ *p1 = atanh(*p2); }"]*2 +
 # 1/2 * log((1+x)/(1-x))
 ["{
@@ -579,7 +579,7 @@ $func_body =
 "
 mkfuncs('Rcp', $data_types, $data_types,
  [nil] +
- ["*p1 = 1/(*p2);"]*5 + 
+ ["*p1 = 1/(*p2);"]*6 + 
  ["*p1 = recip#C((type1*)p2);"]*2 +
  ["*p1 = rb_funcall(INT2FIX(1),na_id_div,1,*p2);"]
 )
@@ -658,11 +658,11 @@ $func_body =
 "
 mkpowfuncs('Pow',
 [
-[/[O]/,/[O]/,     "*p1 = rb_funcall(*p2,na_id_power,1,*p3);"],
-[/[BIL]/,/[BIL]/, "*p1 = powInt(*p2,*p3);"],
-[/[FD]/,/[BIL]/,  "*p1 = pow#Ci(*p2,*p3);"],
-[/[BILFD]/,/[FD]/,"*p1 = pow(*p2,*p3);"],
-[/[XC]/,/[BIL]/,  "*p1 = pow#Ci((typed*)p2,*p3);"],
+[/[O]/,/[O]/,      "*p1 = rb_funcall(*p2,na_id_power,1,*p3);"],
+[/[BILG]/,/[BILG]/,"*p1 = powInt(*p2,*p3);"],
+[/[FD]/,/[BILG]/,  "*p1 = pow#Ci(*p2,*p3);"],
+[/[BILGFD]/,/[FD]/,"*p1 = pow(*p2,*p3);"],
+[/[XC]/,/[BILG]/,  "*p1 = pow#Ci((typed*)p2,*p3);"],
 [/[XC]/,/[FD]/,
    "typed r;
     if (*p3==0)
@@ -695,7 +695,8 @@ print <<EOM
 static void
  na_exec_math(struct NARRAY *a1, struct NARRAY *a2, void (*func)())
 {
-  int  i, s1, s2;
+  shape_t  i;
+  int s1, s2;
   char *p1, *p2;
 
   s1 = na_sizeof[a1->type];

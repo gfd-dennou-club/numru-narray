@@ -26,6 +26,9 @@
 #define NARRAY_VERSION "0.6.0.8"
 #define NARRAY_VERSION_CODE 608
 
+/* big memory support */
+#define NARRAY_BIGMEM 1
+
 /*
   Data types used in NArray :
   Please modify these types if your system has any different type.
@@ -61,22 +64,48 @@ typedef int                    int32_t;  /* NA_LINT */
 # endif
 #endif /* HAVE_INT32_T */
 
-/* unsigned 32-bit integer */
-#ifndef HAVE_U_INT32_T
-# ifdef HAVE_UINT32_T
-typedef uint32_t			u_int32_t;
+#ifndef HAVE_INT64_T
+# if SIZEOF_LONG_LONG == 8
+typedef long long                   int64_t;  /* NA_LLINT */
 # else
-#  if SIZEOF_LONG == 4
-typedef unsigned long                   u_int32_t;
+---->> Please define int64_t manually because sizeof(long long) != 8. <<----
+# endif
+#endif /* HAVE_INT64_T */
+
+/* unsigned 64-bit integer */
+#ifndef HAVE_U_INT64_T
+# ifdef HAVE_UINT64_T
+typedef uint64_t			u_int64_t;
+# else
+#  if SIZEOF_LONG_LONG == 8
+typedef unsigned long long              u_int64_t;
 #  else
-#   if SIZEOF_INT == 4
-typedef unsigned int                    u_int32_t;
-#   else
----->> Please define u_int32_t manually because sizeof(long) != 4. <<----
-#   endif
+---->> Please define u_int64_t manually because sizeof(long long) != 8. <<----
 #  endif
 # endif
-#endif /* HAVE_U_INT32_T */
+#endif /* HAVE_U_INT64_T */
+
+/* shape type */
+#if SIZEOF_VOIDP == 4
+typedef int32_t shape_t;
+#elif SIZEOF_VOIDP == 8
+typedef int64_t shape_t;
+#else
+  ---->> Please define shape_t manually because sizeof(*void) != 4, 8. <<----
+#endif
+#if SIZEOF_INT == SIZEOF_VOIDP
+#define NUM2SHAPE(v) NUM2INT(v)
+#define SHAPE2NUM(v) INT2NUM(v)
+#elif SIZEOF_LONG == SIZEOF_VOIDP
+#define NUM2SHAPE(v) NUM2LONG(v)
+#define SHAPE2NUM(v) LONG2NUM(v)
+#elif SIZEOF_LONG_LONG == SIZEOF_VOIDP
+#define NUM2SHAPE(v) NUM2LL(v)
+#define SHAPE2NUM(v) LL2NUM(v)
+#else
+  ---->> Please define NUM2SHAPE and SHAPE2NUM manually because sizeof(int,long,long long) != sizeof(*void). <<----
+#endif
+
 
 typedef struct { float r,i; }  scomplex;
 typedef struct { double r,i; } dcomplex;
@@ -86,20 +115,29 @@ enum NArray_Types {
   NA_BYTE,	/* 1 */
   NA_SINT,	/* 2 */
   NA_LINT,	/* 3 */
-  NA_SFLOAT,	/* 4 */
-  NA_DFLOAT,	/* 5 */
-  NA_SCOMPLEX,	/* 6 */
-  NA_DCOMPLEX,	/* 7 */
-  NA_ROBJ,	/* 8 */
-  NA_NTYPES	/* 9 */
+  NA_LLINT,	/* 4 */
+  NA_SFLOAT,	/* 5 */
+  NA_DFLOAT,	/* 6 */
+  NA_SCOMPLEX,	/* 7 */
+  NA_DCOMPLEX,	/* 8 */
+  NA_ROBJ,	/* 9 */
+  NA_NTYPES	/* 10 */
 };
+
+#if SIZEOF_VOIDP == 4
+#define NA_SIZE NA_LINT
+#elif SIZEOF_VOIDP == 8
+#define NA_SIZE NA_LLINT
+#else
+---->> Please define NA_SIZE manually because sizeof(*void) != 4 or 8. <<----
+#endif
 
 /* struct for Numerical Array */
 struct NARRAY {
   int    rank;	  /* # of dimension */
-  int    total;	  /* # of total element */
+  shape_t total;  /* # of total element */
   int    type;	  /* data type */
-  int   *shape;
+  shape_t *shape;
   char  *ptr;	  /* pointer to data */
   VALUE  ref;	  /* NArray object wrapping this structure */
 };
@@ -134,6 +172,9 @@ extern const int na_sizeof[NA_NTYPES+1];
 #define NA_IsCOMPLEX(a) \
   ((a)->type==NA_SCOMPLEX || (a)->type==NA_DCOMPLEX)
 #define NA_MAX(a,b) (((a)>(b))?(a):(b))
+#define NA_MAX3(a,b,c) NA_MAX( (NA_MAX((a),(b))), (c) )
+
+
 #define NA_SWAP(a,b,tmp) {(tmp)=(a);(a)=(b);(b)=(tmp);}
 
 #define na_class_dim(klass) NUM2INT(rb_const_get(klass, na_id_class_dim))
@@ -143,14 +184,14 @@ extern const int na_sizeof[NA_NTYPES+1];
 
 #define NA_ALLOC_SLICE(slc,nc,shp,np) \
 { slc = (struct slice*)xmalloc( sizeof(struct slice)*(nc) + \
-				sizeof(int)*(np) );\
-  shp = (int*)&( (slc)[nc] ); }
+				sizeof(shape_t)*(np) );	    \
+  shp = (shape_t*)&( (slc)[nc] ); }
 
 
 /* Function Prototypes */
 
 /* narray.c */
-VALUE na_make_object(int type, int rank, int *shape, VALUE klass);
+VALUE na_make_object(int type, int rank, shape_t *shape, VALUE klass);
 VALUE na_make_scalar(VALUE obj, int type);
 VALUE na_make_empty(int type, VALUE klass);
 int   na_get_typecode(VALUE v);

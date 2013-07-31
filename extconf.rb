@@ -91,8 +91,11 @@ have_type("u_int8_t", header)
 have_type("uint8_t", header)
 have_type("int16_t", header)
 have_type("int32_t", header)
+have_type("int64_t", header)
 have_type("u_int32_t", header)
 have_type("uint32_t", header)
+have_type("u_int64_t", header)
+have_type("uint64_t", header)
 
 $objs = srcs.collect{|i| i+".o"}
 

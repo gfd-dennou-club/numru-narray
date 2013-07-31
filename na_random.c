@@ -189,26 +189,27 @@ static VALUE
 #define rand_single(y) \
   ((double)(y) * (1.0/4294967296.0))
 
-static int n_bits(int32_t a)
+static int n_bits(int64_t a)
 {
-  int i, x, xu, xl, n=4;
-  int32_t m;
+  int i, x, xl, n=8;
+  //  int i, x, xu, xl, n=8;
+  int64_t m;
 
   if (a==0) return 0;
   if (a<0) a=-a;
 
-  x  = 1<<n;
-  xu = 1<<(n+1);
+  x  = ((int64_t)1)<<n;
+  //  xu = 1<<(n+1);
   xl = 0;
 
   for (i=n; i>=0; --i) {
-    m = ~((1<<(x-1))-1);
+    m = ~((((int64_t)1)<<(x-1))-1);
 
     if (m & a) {
       xl = x;
       x += 1<<(i-1);
     } else {
-      xu = x;
+      //      xu = x;
       x -= 1<<(i-1);
     }
     /* printf("%3i, [%3i, %3i], %x\n", i, xu, xl, m1); */
@@ -218,17 +219,17 @@ static int n_bits(int32_t a)
 }
 
 // max&limit must be integer
-static u_int32_t size_check(double rmax, double limit)
+static u_int64_t size_check(double rmax, double limit)
 {
-  u_int32_t max;
+  u_int64_t max;
 
   if ( rmax == 0 ) {
-    return (u_int32_t)(limit-1);
+    return (u_int64_t)(limit-1);
   }
   if ( rmax < 0 ) {
     rmax = -rmax;
   }
-  max = (u_int32_t)(rmax - 1);
+  max = (u_int64_t)(rmax - 1);
   if ( max >= limit ) {
     rb_raise(rb_eArgError, "rand-max(%.0f) must be <= %.0f", rmax, limit);
   }
@@ -242,7 +243,7 @@ static void TpErr(void) {
 static void RndB(int n, char *p1, int i1, double rmax)
 {
   u_int32_t y;
-  u_int8_t max;
+  u_int64_t max;
   int shift;
 
   if ( rmax < 0 ) {
@@ -271,7 +272,7 @@ static void RndB(int n, char *p1, int i1, double rmax)
 static void RndI(int n, char *p1, int i1, double rmax)
 {
   u_int32_t y;
-  u_int32_t max;
+  u_int64_t max;
   int shift, sign=1;
 
   if ( rmax < 0 ) { rmax = -rmax; sign = -1; }
@@ -298,12 +299,12 @@ static void RndI(int n, char *p1, int i1, double rmax)
 static void RndL(int n, char *p1, int i1, double rmax)
 {
   u_int32_t y;
-  u_int32_t max;
+  u_int64_t max;
   int shift, sign=1;
 
   if ( rmax < 0 ) { rmax = -rmax; sign = -1; }
   max   = size_check(rmax,0x80000000);
-  shift = 32 - n_bits(max);
+  shift = 64 - n_bits(max);
 
   if (max<1) {
     for (; n; --n) {
@@ -317,6 +318,33 @@ static void RndL(int n, char *p1, int i1, double rmax)
 	y >>= shift;
       } while (y > max);
       *(int32_t*)p1 = (int32_t)y*sign;
+      p1+=i1;
+    }
+  }
+}
+
+static void RndG(int n, char *p1, int i1, double rmax)
+{
+  u_int64_t y;
+  u_int64_t max;
+  int shift, sign=1;
+
+  if ( rmax < 0 ) { rmax = -rmax; sign = -1; }
+  max   = size_check(rmax,0x800000000000);
+  shift = 64 - n_bits(max);
+
+  if (max<1) {
+    for (; n; --n) {
+      *(int64_t*)p1 = 0;
+      p1+=i1;
+    }
+  } else {
+    for (; n; --n) {
+      do {
+	genrand(y);
+	y >>= shift;
+      } while (y > max);
+      *(int64_t*)p1 = (int64_t)y*sign;
       p1+=i1;
     }
   }
@@ -371,7 +399,7 @@ static void RndC(int n, char *p1, int i1, double rmax)
 }
 
 na_func_t RndFuncs =
-  { TpErr, RndB, RndI, RndL, RndF, RndD, RndX, RndC, TpErr };
+  { TpErr, RndB, RndI, RndL, RndG, RndF, RndD, RndX, RndC, TpErr };
 
 
 static VALUE
