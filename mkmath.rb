@@ -695,7 +695,7 @@ print <<EOM
 static void
  na_exec_math(struct NARRAY *a1, struct NARRAY *a2, void (*func)())
 {
-  shape_t  i;
+  na_shape_t i;
   int s1, s2;
   char *p1, *p2;
 

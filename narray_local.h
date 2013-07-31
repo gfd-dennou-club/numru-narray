@@ -13,14 +13,14 @@ typedef int32_t na_index_t;
 
 struct slice {
   char *p;   	/* pointer to data		--- used in loop */
-  shape_t n;    	/* n of indices of this rank */
-  shape_t pstep; /* = step * stride * elmsz	--- set in na_init_slice */ 
-  shape_t pbeg;  /* = beg * stride * elmsz	--- set in na_init_slice */
-  shape_t stride; /* = shape[0]*shape[1]*...*shape[r-1]
+  na_shape_t n;    	/* n of indices of this rank */
+  na_shape_t pstep; /* = step * stride * elmsz	--- set in na_init_slice */ 
+  na_shape_t pbeg;  /* = beg * stride * elmsz	--- set in na_init_slice */
+  na_shape_t stride; /* = shape[0]*shape[1]*...*shape[r-1]
 						--- set in na_init_slice */
-  shape_t step;
-  shape_t beg;
-  shape_t *idx;  /* NULL if normal step */
+  na_shape_t step;
+  na_shape_t beg;
+  na_shape_t *idx;  /* NULL if normal step */
 };
 
 typedef void (*na_setfunc_t[NA_NTYPES][NA_NTYPES]) ();
@@ -110,14 +110,14 @@ extern VALUE cNArrayScalar, cComplex;
 VALUE na_newdim_ref(int argc, VALUE *argv, VALUE self);
 
 /* na_func.c */
-void na_shape_max3(int ndim, shape_t *max_shp, shape_t *shp1, shape_t *shp2, shape_t *shp3);
-void na_shape_copy( int ndim, shape_t *shape, struct NARRAY *a );
+void na_shape_max3(int ndim, na_shape_t *max_shp, na_shape_t *shp1, na_shape_t *shp2, na_shape_t *shp3);
+void na_shape_copy( int ndim, na_shape_t *shape, struct NARRAY *a );
 
-void na_init_slice(struct slice *s, int rank, shape_t *shape, int elmsz);
-void na_set_slice_1obj(int ndim, struct slice *slc, shape_t *shape);
+void na_init_slice(struct slice *s, int rank, na_shape_t *shape, int elmsz);
+void na_set_slice_1obj(int ndim, struct slice *slc, na_shape_t *shape);
 int  na_set_slice_3obj( int ndim,
 			struct slice *s1, struct slice *s2, struct slice *s3,
-			shape_t *shp1, shape_t *shp2, shape_t *shp3, shape_t *shape );
+			na_shape_t *shp1, na_shape_t *shp2, na_shape_t *shp3, na_shape_t *shape );
 void na_loop_general(struct NARRAY *a1, struct NARRAY *a2,
 		     struct slice *s1, struct slice *s2, void (*func)());
 void na_loop_index_ref(struct NARRAY *a1, struct NARRAY *a2,

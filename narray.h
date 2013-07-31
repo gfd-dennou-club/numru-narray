@@ -87,11 +87,11 @@ typedef unsigned long long              u_int64_t;
 
 /* shape type */
 #if SIZEOF_VOIDP == 4
-typedef int32_t shape_t;
+typedef int32_t na_shape_t;
 #elif SIZEOF_VOIDP == 8
-typedef int64_t shape_t;
+typedef int64_t na_shape_t;
 #else
-  ---->> Please define shape_t manually because sizeof(*void) != 4, 8. <<----
+  ---->> Please define na_shape_t manually because sizeof(*void) != 4, 8. <<----
 #endif
 #if SIZEOF_INT == SIZEOF_VOIDP
 #define NUM2SHAPE(v) NUM2INT(v)
@@ -135,9 +135,9 @@ enum NArray_Types {
 /* struct for Numerical Array */
 struct NARRAY {
   int    rank;	  /* # of dimension */
-  shape_t total;  /* # of total element */
+  na_shape_t total;  /* # of total element */
   int    type;	  /* data type */
-  shape_t *shape;
+  na_shape_t *shape;
   char  *ptr;	  /* pointer to data */
   VALUE  ref;	  /* NArray object wrapping this structure */
 };
@@ -184,14 +184,14 @@ extern const int na_sizeof[NA_NTYPES+1];
 
 #define NA_ALLOC_SLICE(slc,nc,shp,np) \
 { slc = (struct slice*)xmalloc( sizeof(struct slice)*(nc) + \
-				sizeof(shape_t)*(np) );	    \
-  shp = (shape_t*)&( (slc)[nc] ); }
+				sizeof(na_shape_t)*(np) );	    \
+  shp = (na_shape_t*)&( (slc)[nc] ); }
 
 
 /* Function Prototypes */
 
 /* narray.c */
-VALUE na_make_object(int type, int rank, shape_t *shape, VALUE klass);
+VALUE na_make_object(int type, int rank, na_shape_t *shape, VALUE klass);
 VALUE na_make_scalar(VALUE obj, int type);
 VALUE na_make_empty(int type, VALUE klass);
 int   na_get_typecode(VALUE v);

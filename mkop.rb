@@ -80,7 +80,7 @@ data = [
   [/[XC]/,/[XC]/,        "p1->r = p2->r; p1->i = p2->i;"] ]
 
 $func_body = 
-  "static void #name#CC(shape_t n, char *p1, shape_t i1, char *p2, shape_t i2)
+  "static void #name#CC(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
 {
   for (; n; --n) {
     OPERATION
@@ -96,7 +96,7 @@ mksetfuncs('Set','','',data)
 #  Unary Funcs
 #
 $func_body = 
-  "static void #name#C(shape_t n, char *p1, shape_t i1, char *p2, shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
 {
   for (; n; --n) {
     OPERATION
@@ -317,7 +317,7 @@ mksortfuncs('SortIdx', $data_types, $data_types, [nil] +
 
 # indgen
 $func_body = 
-  "static void #name#C(shape_t n, char *p1, shape_t i1, int p2, shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, int p2, na_shape_t i2)
 {
   for (; n; --n) {
     OPERATION
@@ -336,7 +336,7 @@ mkfuncs('IndGen',$data_types,[$data_types[3]]*9,
 
 
 $func_body = 
-"static void #name#C(shape_t n, char *p1, shape_t i1, char *p2, shape_t i2)
+"static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
 {
   OPERATION
 }
@@ -448,9 +448,9 @@ mkfuncs('Insp',['']+[$data_types[9]]*9,$data_types,
 =begin
 # Optimize experiment
 $func_body = 
-  "static void #name#C(shape_t n, char *p1, shape_t i1, char *p2, shape_t i2, char *p3, shape_t i3)
+  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
 {
-  shape_t i;
+  na_shape_t i;
   if (i1==sizeof(type1) && i2==sizeof(type1) && i3==sizeof(type1)) {
     type1 *a1=p1, *a2=p2, *a3=p3;
     for (i=0; n; --n,++i) {
@@ -470,7 +470,7 @@ mkfuncs('MulB', $data_types, $data_types,
 =end
 
 $func_body = 
-  "static void #name#C(shape_t n, char *p1, shape_t i1, char *p2, shape_t i2, char *p3, shape_t i3)
+  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
 {
   for (; n; --n) {
     OPERATION
@@ -631,7 +631,7 @@ mkfuncs('atan2', $data_types, $data_types,
 #   Mask
 #
 $func_body = 
-  "static void #name#C(shape_t n, char *p1, shape_t i1, char *p2, shape_t i2, char *p3, shape_t i3)
+  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
 {
   for (; n; --n) {
     OPERATION

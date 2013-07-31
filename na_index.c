@@ -15,10 +15,10 @@
 #define EXCL(r) (RTEST(rb_funcall((r),na_id_exclude_end,0)))
 
 static int
- na_index_range(VALUE obj, shape_t size, struct slice *sl)
+ na_index_range(VALUE obj, na_shape_t size, struct slice *sl)
 {
-  shape_t beg,end,len;
-  shape_t step;
+  na_shape_t beg,end,len;
+  na_shape_t step;
   VALUE vbeg, vend;
 
   sl->idx  = NULL;
@@ -75,7 +75,7 @@ static int
 
 
 static int
- na_index_scalar(shape_t idx, shape_t size, struct slice *sl)
+ na_index_scalar(na_shape_t idx, na_shape_t size, struct slice *sl)
 {
   if (idx<0) idx+=size;
   if (idx<0 || idx>=size)
@@ -89,10 +89,10 @@ static int
 
 
 static int
- na_ary_to_index(struct NARRAY *a1, shape_t size, struct slice *s)
+ na_ary_to_index(struct NARRAY *a1, na_shape_t size, struct slice *s)
 {
-  shape_t i;
-  shape_t idx, *p;
+  na_shape_t i;
+  na_shape_t idx, *p;
 
   /* Empty Array */
   if (a1->total==0) {
@@ -117,7 +117,7 @@ static int
     /* Copy index array */
     s->n    = a1->total;
     s->step = 1;
-    s->idx  = p = ALLOC_N(shape_t, a1->total);
+    s->idx  = p = ALLOC_N(na_shape_t, a1->total);
     SetFuncs[NA_SIZE][a1->type]( s->n,
 				 s->idx, na_sizeof[NA_SIZE],
 				 a1->ptr, na_sizeof[a1->type] );
@@ -158,9 +158,9 @@ static void na_free_slice_index(struct slice *s, int n)
 }
 
 
-static int na_index_test(volatile VALUE idx, shape_t shape, struct slice *sl)
+static int na_index_test(volatile VALUE idx, na_shape_t shape, struct slice *sl)
 {
-  shape_t size;
+  na_shape_t size;
   struct NARRAY *na;
 
   switch(TYPE(idx)) {
@@ -214,11 +214,11 @@ static int na_index_test(volatile VALUE idx, shape_t shape, struct slice *sl)
 }
 
 
-static shape_t
+static na_shape_t
  na_index_analysis(int nidx, VALUE *idx, struct NARRAY *ary, struct slice *sl)
 {
   int i, j, k;
-  shape_t total=1, size;
+  na_shape_t total=1, size;
   int multi_ellip=0;
 
   for (i=j=0; i<nidx; ++i) {
@@ -306,13 +306,13 @@ static VALUE
  na_aref_slice(struct NARRAY *a2, struct slice *s2, VALUE klass, int flag)
 {
   int i, ndim, class_dim, *shrink;
-  shape_t *shape;
+  na_shape_t *shape;
   VALUE  extr;
   struct NARRAY *a1;
   struct slice  *s1;
 
   ndim = a2->rank;
-  shape = ALLOCA_N(shape_t,ndim);
+  shape = ALLOCA_N(na_shape_t,ndim);
   shrink = ALLOCA_N(int,ndim);
 
   for (i=0; i<ndim; ++i) {
@@ -355,7 +355,7 @@ static VALUE
 static VALUE
  na_aref_single_dim_array(VALUE self, volatile VALUE vidx)
 {
-  shape_t  total;
+  na_shape_t  total;
   struct NARRAY *a1, *a2, *aidx;
   struct slice  *s1, *s2;
   VALUE v;
@@ -396,7 +396,7 @@ static VALUE
 static VALUE
  na_aref_single_dim(VALUE self, VALUE idx, int flag)
 {
-  shape_t size;
+  na_shape_t size;
   VALUE v;
   struct NARRAY *ary, *arynew;
   struct slice *sl;
@@ -434,7 +434,7 @@ static VALUE
  na_aref_multi_dim_single_elm(VALUE self, struct slice *sl, int flag)
 {
   int i, rank;
-  shape_t pos, *shape;
+  na_shape_t pos, *shape;
   struct NARRAY *ary, *arynew;
   VALUE v;
 
@@ -463,7 +463,7 @@ static VALUE
     klass = CLASS_OF(self);
     class_dim = na_class_dim(klass);
     if (rank < class_dim) rank = class_dim;
-    shape = ALLOCA_N(shape_t, rank);
+    shape = ALLOCA_N(na_shape_t, rank);
     for (i=0;i<rank;++i) shape[i]=1;
     v = na_make_object(ary->type,rank,shape,klass);
     GetNArray(v,arynew);
@@ -477,7 +477,7 @@ static VALUE
  na_aref_multi_dim(VALUE self, int nidx, VALUE *idx, int flag)
 {
   VALUE v;
-  shape_t   size;
+  na_shape_t   size;
   struct NARRAY *ary;
   struct slice *sl;
 
@@ -508,12 +508,12 @@ static VALUE
 
 
 /* vvv mask vvv */
-static shape_t
+static na_shape_t
  na_count_true_body(VALUE self)
 {
   struct NARRAY *ary;
-  shape_t  n;
-  shape_t count=0;
+  na_shape_t  n;
+  na_shape_t count=0;
   u_int8_t *ptr;
 
   GetNArray(self,ary);
@@ -541,12 +541,12 @@ VALUE
   return( SHAPE2NUM(na_count_true_body(self)) );
 }
 
-static shape_t
+static na_shape_t
  na_count_false_body(VALUE self)
 {
   struct NARRAY *ary;
-  shape_t n;
-  shape_t count=0;
+  na_shape_t n;
+  na_shape_t count=0;
   u_int8_t *ptr;
 
   GetNArray(self,ary);
@@ -578,7 +578,7 @@ VALUE
 VALUE
  na_aref_mask(VALUE self, VALUE mask)
 {
-  shape_t total;
+  na_shape_t total;
   int i;
   struct NARRAY *a1, *am, *a2;
   VALUE v;
@@ -604,7 +604,7 @@ VALUE
 
   RefMaskFuncs[a1->type]
     ( a1->total, a2->ptr, na_sizeof[a2->type], a1->ptr,
-      na_sizeof[a1->type], am->ptr, (shape_t)1 );
+      na_sizeof[a1->type], am->ptr, (na_shape_t)1 );
 
   return(v);
 }
@@ -652,7 +652,7 @@ VALUE na_slice(int argc, VALUE *argv, VALUE self)
 /* make slice for array-set: a[0..-1,1..2] = 1 */
 static void
  na_make_slice_aset_fill(int rank, struct NARRAY *src_ary,
-			 struct slice *src_slc, shape_t *src_shape,
+			 struct slice *src_slc, na_shape_t *src_shape,
 			 struct slice *dst_slc)
 {
   int i;
@@ -671,10 +671,10 @@ static void
 /* make slice for array-set */
 static void
  na_make_slice_aset(struct NARRAY *dst, struct NARRAY *src,
-		    struct slice *s1, struct slice *s2, shape_t *src_shape)
+		    struct slice *s1, struct slice *s2, na_shape_t *src_shape)
 {
   int  i, j;
-  shape_t idx_end;
+  na_shape_t idx_end;
   
   /* count range index */
   for (j=i=0; i<dst->rank; ++i) {
@@ -738,7 +738,7 @@ void
  na_aset_slice(struct NARRAY *dst, struct NARRAY *src, struct slice *dst_slc)
 {
   int   rank = dst->rank;
-  shape_t  *src_shape;
+  na_shape_t  *src_shape;
   struct slice *src_slc;
 
   /* rank check */
@@ -748,7 +748,7 @@ void
     rb_raise(rb_eIndexError, "cannot store empty array");
 
   /* extend rank */
-  src_shape = ALLOCA_N(shape_t, rank);
+  src_shape = ALLOCA_N(na_shape_t, rank);
   src_slc   = ALLOC_N(struct slice, rank+1);
 
   if (src->total==1)
@@ -810,7 +810,7 @@ static void
 static void
  na_aset_single_dim(VALUE self, VALUE idx, volatile VALUE val)
 {
-  shape_t size;
+  na_shape_t size;
   struct NARRAY *src, *dst;
   struct slice *sl;
 
@@ -859,7 +859,7 @@ static void
  na_aset_multi_dim(VALUE self, int nidx, VALUE *idx, volatile VALUE val)
 {
   int    i;
-  shape_t pos, size;
+  na_shape_t pos, size;
   struct NARRAY *dst, *src;
   struct slice *sl;
 
@@ -941,7 +941,7 @@ static void
 void
  na_aset_mask(VALUE self, VALUE mask, VALUE val)
 {
-  shape_t size, step;
+  na_shape_t size, step;
   int i;
   struct NARRAY *a1, *am, *a2;
 
@@ -973,7 +973,7 @@ void
 
   SetMaskFuncs[a1->type]
     ( a1->total, a1->ptr, na_sizeof[a1->type],
-      a2->ptr, step, am->ptr, (shape_t)1 );
+      a2->ptr, step, am->ptr, (na_shape_t)1 );
 }
 
 /* method: []=(idx1,idx2,...,idxN,val) */

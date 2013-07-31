@@ -4,9 +4,9 @@ x = NArray.complex(1024,1024).indgen!
 
 p x
 puts 'executing fftw ...'
-t1 = Time.times.utime
+t1 = Time.now.to_f
 y = FFTW.fftw( x, 1 )
-t2 = Time.times.utime
+t2 = Time.now.to_f
 print "time: ",t2 - t1,"\n"
 p y
 

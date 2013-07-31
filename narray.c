@@ -80,7 +80,7 @@ void na_xfree(void *ptr)
 static void
  na_mark_obj(struct NARRAY *ary)
 {
-  shape_t i;
+  na_shape_t i;
   VALUE *ptr;
 
   ptr = (VALUE*) ary->ptr;
@@ -119,11 +119,11 @@ static void
 
 /* allocation of NARRAY */
 struct NARRAY*
- na_alloc_struct(int type, int rank, shape_t *shape)
+ na_alloc_struct(int type, int rank, na_shape_t *shape)
 {
-  shape_t total=1, total_bak;
+  na_shape_t total=1, total_bak;
   int i;
-  shape_t memsz;
+  na_shape_t memsz;
   struct NARRAY *ary;
 
   for (i=0; i<rank; ++i) {
@@ -135,7 +135,7 @@ struct NARRAY*
     }
     total_bak = total;
     total *= shape[i];
-    if (total < 1 || (total >> (sizeof(shape_t)*8-2)) > 0 || total/shape[i] != total_bak) {
+    if (total < 1 || (total >> (sizeof(na_shape_t)*8-2)) > 0 || total/shape[i] != total_bak) {
       rb_raise(rb_eArgError, "array size is too large");
     }
   }
@@ -151,7 +151,7 @@ struct NARRAY*
   }
   else {
     memsz = na_sizeof[type] * total;
-    if (memsz < 1 || (memsz >> (sizeof(shape_t)*8-2)) > 0 || memsz/na_sizeof[type] != total) {
+    if (memsz < 1 || (memsz >> (sizeof(na_shape_t)*8-2)) > 0 || memsz/na_sizeof[type] != total) {
       rb_raise(rb_eArgError, "allocation size is too large");
     }
 
@@ -162,7 +162,7 @@ struct NARRAY*
 #endif
 
     ary        = ALLOC(struct NARRAY);
-    ary->shape = ALLOC_N(shape_t,  rank);
+    ary->shape = ALLOC_N(na_shape_t,  rank);
     ary->ptr   = ALLOC_N(char, memsz);
 
     ary->rank  = rank;
@@ -242,7 +242,7 @@ static VALUE
 
 
 VALUE
- na_make_object(int type, int rank, shape_t *shape, VALUE klass)
+ na_make_object(int type, int rank, na_shape_t *shape, VALUE klass)
 {
   struct NARRAY *na;
 
@@ -259,7 +259,7 @@ VALUE
 VALUE
  na_make_scalar(VALUE obj, int type)
 {
-  static shape_t shape=1;
+  static na_shape_t shape=1;
   VALUE v;
   struct NARRAY *ary;
 
@@ -294,7 +294,7 @@ struct NARRAY*
     rb_raise(rb_eRuntimeError, "cannot create NArrayRefer of Empty NArray");
 
   ary        = ALLOC(struct NARRAY);
-  ary->shape = ALLOC_N(shape_t, orig->rank);
+  ary->shape = ALLOC_N(na_shape_t, orig->rank);
   ary->ptr   = orig->ptr;
   ary->rank  = orig->rank;
   ary->total = orig->total;
@@ -346,14 +346,14 @@ static VALUE
  na_new2(int argc, VALUE *argv, int type, VALUE klass)
 {
   int i;
-  shape_t *shape;
+  na_shape_t *shape;
   struct NARRAY *ary;
   VALUE v;
 
   if (argc == 0)
     rb_raise(rb_eArgError, "Argument required");
 
-  shape = ALLOCA_N(shape_t,argc);
+  shape = ALLOCA_N(na_shape_t,argc);
   for (i=0; i<argc; ++i) shape[i]=NUM2SHAPE(argv[i]);
 
   v = na_make_object(type,argc,shape,klass);
@@ -613,7 +613,7 @@ static VALUE
   struct NARRAY *ary;
   VALUE v;
   int i, type, rank=argc-1;
-  shape_t len=1, str_len, *shape;
+  na_shape_t len=1, str_len, *shape;
 
   if (argc < 1)
     rb_raise(rb_eArgError, "Type and Size Arguments required");
@@ -624,13 +624,13 @@ static VALUE
 
   if (argc == 1) {
     rank  = 1;
-    shape = ALLOCA_N(shape_t,rank);
+    shape = ALLOCA_N(na_shape_t,rank);
     if ( str_len % na_sizeof[type] != 0 )
       rb_raise(rb_eArgError, "string size mismatch");
     shape[0] = str_len / na_sizeof[type];
   }
   else {
-    shape = ALLOCA_N(shape_t,rank);
+    shape = ALLOCA_N(na_shape_t,rank);
     for (i=0; i<rank; ++i)
       len *= shape[i] = NUM2SHAPE(argv[i+1]);
     len *= na_sizeof[type];
@@ -664,13 +664,13 @@ static VALUE
 {
   struct NARRAY *a1, *a2;
   int i, rank;
-  shape_t *shape;
+  na_shape_t *shape;
   VALUE v;
 
   GetNArray(self,a1);
 
   rank = a1->rank+1;
-  shape = ALLOCA_N(shape_t,rank);
+  shape = ALLOCA_N(na_shape_t,rank);
   shape[0] = na_sizeof[a1->type];
   for (i=1; i<rank; ++i)
     shape[i] = a1->shape[i-1];
@@ -688,7 +688,7 @@ static VALUE
  na_to_type_as_binary(VALUE self, VALUE vtype)
 {
   struct NARRAY *a1, *a2;
-  shape_t size, total;
+  na_shape_t size, total;
   int type;
   VALUE v;
 
@@ -709,7 +709,7 @@ static VALUE
 
 
 static void
- na_to_string_binary(shape_t n, char *p1, shape_t i1, char *p2, shape_t i2)
+ na_to_string_binary(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
 {
   for (; n>0; --n) {
     *(VALUE*)p1 = rb_str_new(p2,i2);
@@ -837,7 +837,7 @@ static VALUE
 static void
  na_reshape(int argc, VALUE *argv, struct NARRAY *ary, VALUE self)
 {
-  shape_t *shape, total=1;
+  na_shape_t *shape, total=1;
   int *shrink;
   int i, class_dim, unfixed=-1;
   VALUE klass;
@@ -858,7 +858,7 @@ static void
   }
 
   /* get shape from argument */
-  shape = ALLOC_N(shape_t,argc);
+  shape = ALLOC_N(na_shape_t,argc);
   for (i=0; i<argc; ++i)
     switch(TYPE(argv[i])) {
     case T_FIXNUM:
@@ -938,7 +938,7 @@ static VALUE
 static void
  na_newdim(int argc, VALUE *argv, struct NARRAY *ary)
 {
-  shape_t *shape;
+  na_shape_t *shape;
   int *count;
   int  i, j;
 
@@ -962,7 +962,7 @@ static void
     ++count[j];
   }
   /* extend shape shape */
-  shape = ALLOC_N(shape_t,ary->rank+argc);
+  shape = ALLOC_N(na_shape_t,ary->rank+argc);
   for (j=i=0; i<ary->rank; ++i) {
     while (count[i]-->0) shape[j++] = 1;
     shape[j++] = ary->shape[i];
@@ -1024,7 +1024,7 @@ VALUE na_fill(VALUE self, volatile VALUE val)
 VALUE
  na_indgen(int argc, VALUE *argv, VALUE self)
 {
-  shape_t start=0, step=1;
+  na_shape_t start=0, step=1;
   struct NARRAY *ary;
 
   if (argc>0) {
@@ -1050,7 +1050,7 @@ static VALUE
  na_where2(volatile VALUE obj)
 {
   VALUE v1, v0;
-  shape_t  n, i, n1, n0;
+  na_shape_t  n, i, n1, n0;
   char *c;
   int32_t *idx1, *idx0;
   struct NARRAY *ary, *a1, *a0; /* a1=true, a0=false */
@@ -1105,7 +1105,7 @@ static VALUE
 static VALUE
  na_each(VALUE obj)
 {
-  shape_t i;
+  na_shape_t i;
   int sz;
   VALUE v;
   struct NARRAY *ary;
@@ -1131,7 +1131,7 @@ static VALUE
 static VALUE
  na_collect(VALUE obj1)
 {
-  shape_t i;
+  na_shape_t i;
   int sz;
   VALUE v, obj2;
   struct NARRAY *a1, *a2;
@@ -1163,7 +1163,7 @@ static VALUE
 static VALUE
  na_collect_bang(VALUE self)
 {
-  shape_t i;
+  na_shape_t i;
   int sz;
   VALUE v;
   struct NARRAY *a1;
