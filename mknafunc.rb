@@ -72,6 +72,8 @@ def mksetfuncs(name,op,id,funcs)
 	    gsub(/typed/,td[i]).
             gsub(/typef/,tr[i])
 	  puts $func_body.
+	    gsub(/typed/,td[i]).
+            gsub(/typef/,tr[i]).
 	    gsub(/#name/,name).
 	    sub(/OPERATION/,f).
 	    gsub(/#CC/,c[i]+c[j])
@@ -127,6 +129,9 @@ def mkfuncs(name,t1,t2,func)
 	gsub(/typec/,t1[i]).
 	gsub(/typef/,tr[i])
       puts $func_body.
+	gsub(/type1/,td[i]).
+	gsub(/typec/,t1[i]).
+	gsub(/typef/,tr[i]).
 	gsub(/#name/,name).
 	sub(/OPERATION/,f).
 	gsub(/#C/,c[i])

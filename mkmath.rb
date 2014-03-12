@@ -150,38 +150,38 @@ static void divC(dcomplex *p1, dcomplex *p2) {
 }
 
 
-static scomplex recipX(scomplex *z)
+static scomplex recipX(scomplex z)
 {
   scomplex r;
   float    n;
 
-  if ( (z->r<0 ? -z->r:z->r) > (z->i<0 ? -z->i:z->i) ) {
-    r.i  = z->i/z->r;
-    n    = (1+r.i*r.i)*z->r;
+  if ( (z.r<0 ? -z.r:z.r) > (z.i<0 ? -z.i:z.i) ) {
+    r.i  = z.i/z.r;
+    n    = (1+r.i*r.i)*z.r;
     r.r  = 1/n;
     r.i /= -n;
   } else {
-    r.r  = z->r/z->i;
-    n    = (1+r.r*r.r)*z->i;
+    r.r  = z.r/z.i;
+    n    = (1+r.r*r.r)*z.i;
     r.r /= n;
     r.i  = -1/n;
   }
   return r;
 }
 
-static dcomplex recipC(dcomplex *z)
+static dcomplex recipC(dcomplex z)
 {
   dcomplex r;
   double   n;
 
-  if ( (z->r<0 ? -z->r:z->r) > (z->i<0 ? -z->i:z->i) ) {
-    r.i  = z->i/z->r;
-    n    = (1+r.i*r.i)*z->r;
+  if ( (z.r<0 ? -z.r:z.r) > (z.i<0 ? -z.i:z.i) ) {
+    r.i  = z.i/z.r;
+    n    = (1+r.i*r.i)*z.r;
     r.r  = 1/n;
     r.i /= -n;
   } else {
-    r.r  = z->r/z->i;
-    n    = (1+r.r*r.r)*z->i;
+    r.r  = z.r/z.i;
+    n    = (1+r.r*r.r)*z.i;
     r.r /= n;
     r.i  = -1/n;
   }
@@ -261,7 +261,7 @@ static scomplex powXi(scomplex *x, int p)
   if (p==0) { return r; }
   if (p<0) {
     y = powXi(x,-p);
-    return recipX(&y);
+    return recipX(y);
   }
   /* if (p>2) */
   while (p) {
@@ -281,7 +281,7 @@ static dcomplex powCi(dcomplex *x, int p)
   if (p==0) { return r; }
   if (p<0) {
     y = powCi(x,-p);
-    return recipC(&y);
+    return recipC(y);
   }
   /* if (p>2) */
   while (p) {
@@ -569,19 +569,23 @@ end
 #  Recip
 #
 $func_body = 
-  "static void #name#C(int n, char *p1, int i1, char *p2, int i2)
+  "static void #name#C(int n, char *p1_0, int i1, char *p2_0, int i2)
 {
-  for (; n; --n) {
+  type1* p1 = (type1*) p1_0;
+  typec* p2 = (typec*) p2_0;
+  int i;
+
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
     OPERATION
-    p1+=i1; p2+=i2;
   }
 }
 "
 mkfuncs('Rcp', $data_types, $data_types,
  [nil] +
- ["*p1 = 1/(*p2);"]*6 + 
- ["*p1 = recip#C((type1*)p2);"]*2 +
- ["*p1 = rb_funcall(INT2FIX(1),na_id_div,1,*p2);"]
+ ["p1[i] = 1/(p2[i]);"]*6 + 
+ ["p1[i] = recip#C(p2[i]);"]*2 +
+ ["p1[i] = rb_funcall(INT2FIX(1),na_id_div,1,p2[i]);"]
 )
 
 
@@ -614,6 +618,9 @@ def mkpowfuncs(name,funcs)
 	    gsub(/typed/,td[i]).
             gsub(/typef/,tr[i])
 	  puts $func_body.
+            gsub(/#t1/,tu).
+            gsub(/#t2/,td[i]).
+            gsub(/#t3/,td[j]).
 	    gsub(/#name/,name).
 	    sub(/OPERATION/,f).
 	    gsub(/#CC/,c[i]+c[j]).
@@ -703,10 +710,10 @@ static void
   s2 = na_sizeof[a2->type];
   p1 = a1->ptr;
   p2 = a2->ptr;
-  for (i=a1->total; i ; i--) {
-    (*func)( p1, p2 );
-    p1 += s1;
-    p2 += s2;
+
+  #pragma omp parallel for
+  for (i=0;i<a1->total; i++) {
+    (*func)( p1+s1*i, p2+s2*i );
   }
 }
 
