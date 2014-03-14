@@ -69,22 +69,23 @@ data = [
   [/[O]/,/[L]/,          "*p1 = INT2NUM(*p2);"],
   [/[O]/,/[G]/,          "*p1 = LL2NUM(*p2);"],
   [/[O]/,/[FD]/,         "*p1 = rb_float_new(*p2);"],
-  [/[O]/,/[XC]/,         "*p1 = rb_complex_new(p2->r,p2->i);"],
+  [/[O]/,/[XC]/,         "*p1 = rb_complex_new(p2.r,p2.i);"],
   [/[BIL]/,/[O]/,        "*p1 = NUM2INT(*p2);"],
   [/[G]/,/[O]/,          "*p1 = NUM2LL(*p2);"],
   [/[FD]/,/[O]/,         "*p1 = NUM2DBL(*p2);"],
-  [/[XC]/,/[O]/,         "p1->r = NUM2REAL(*p2); p1->i = NUM2IMAG(*p2);"],
+  [/[XC]/,/[O]/,         "p1.r = NUM2REAL(*p2); p1.i = NUM2IMAG(*p2);"],
   [/[BILFDG]/,/[BILFDG]/,"*p1 = *p2;"],
-  [/[BILFDG]/,/[XC]/,    "*p1 = p2->r;"],
-  [/[XC]/,/[BILFDG]/,    "p1->r = *p2; p1->i = 0;"],
-  [/[XC]/,/[XC]/,        "p1->r = p2->r; p1->i = p2->i;"] ]
+  [/[BILFDG]/,/[XC]/,    "*p1 = p2.r;"],
+  [/[XC]/,/[BILFDG]/,    "p1.r = *p2; p1.i = 0;"],
+  [/[XC]/,/[XC]/,        "p1.r = p2.r; p1.i = p2.i;"] ]
 
 $func_body = 
   "static void #name#CC(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
 {
-  for (; n; --n) {
+  int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
     OPERATION
-    p1+=i1; p2+=i2;
   }
 }
 "
@@ -98,9 +99,10 @@ mksetfuncs('Set','','',data)
 $func_body = 
   "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
 {
-  for (; n; --n) {
+  int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
     OPERATION
-    p1+=i1; p2+=i2;
   }
 }
 "
@@ -147,24 +149,24 @@ EOM
 mkfuncs('Neg', $data_types, $data_types,
  [nil] +
  ["*p1 = -*p2;"]*6 + 
- ["p1->r = -p2->r;
-    p1->i = -p2->i;"]*2 +
+ ["p1.r = -p2.r;
+    p1.i = -p2.i;"]*2 +
  ["*p1 = rb_funcall(*p2,na_id_minus,0);"]
 )
 
 mkfuncs('AddU', $data_types, $data_types,
  [nil] +
  ["*p1 += *p2;"]*6 + 
- ["p1->r += p2->r;
-    p1->i += p2->i;"]*2 +
+ ["p1.r += p2.r;
+    p1.i += p2.i;"]*2 +
  ["*p1 = rb_funcall(*p1,'+',1,*p2);"]
 )
 
 mkfuncs('SbtU', $data_types, $data_types,
  [nil] +
  ["*p1 -= *p2;"]*6 + 
- ["p1->r -= p2->r;
-    p1->i -= p2->i;"]*2 +
+ ["p1.r -= p2.r;
+    p1.i -= p2.i;"]*2 +
  ["*p1 = rb_funcall(*p1,'-',1,*p2);"]
 )
 
@@ -172,8 +174,8 @@ mkfuncs('MulU', $data_types, $data_types,
  [nil] +
  ["*p1 *= *p2;"]*6 + 
  ["type1 x = *p1;
-    p1->r = x.r*p2->r - x.i*p2->i;
-    p1->i = x.r*p2->i + x.i*p2->r;"]*2 +
+    p1.r = x.r*p2.r - x.i*p2.i;
+    p1.i = x.r*p2.i + x.i*p2.r;"]*2 +
  ["*p1 = rb_funcall(*p1,'*',1,*p2);"]
 )
 
@@ -183,9 +185,9 @@ mkfuncs('DivU', $data_types, $data_types,
     *p1 /= *p2;"]*4 + 
  ["*p1 /= *p2;"]*2 + 
  ["type1 x = *p1;
-    typef a = p2->r*p2->r + p2->i*p2->i;
-    p1->r = (x.r*p2->r + x.i*p2->i)/a;
-    p1->i = (x.i*p2->r - x.r*p2->i)/a;"]*2 +
+    typef a = p2.r*p2.r + p2.i*p2.i;
+    p1.r = (x.r*p2.r + x.i*p2.i)/a;
+    p1.i = (x.i*p2.r - x.r*p2.i)/a;"]*2 +
  ["*p1 = rb_funcall(*p1,'/',1,*p2);"]
 )
 
@@ -202,7 +204,7 @@ mkfuncs('ModU', $data_types, $data_types,
 # method: imag=
 mkfuncs('ImgSet',$data_types,$real_types,
  [nil]*7 +
- ["p1->i = *p2;"]*2 +
+ ["p1.i = *p2;"]*2 +
  [nil]
 )
 
@@ -230,7 +232,7 @@ mkfuncs('Round',$int_types,$data_types,[nil] +
 mkfuncs('Abs',$real_types,$data_types,[nil] +
  ["*p1 = *p2;"] + 
  ["*p1 = (*p2<0) ? -*p2 : *p2;"]*5 + 
- ["*p1 = (typec)hypot(p2->r, p2->i);"]*2 +
+ ["*p1 = (typec)hypot(p2.r, p2.i);"]*2 +
  ["*p1 = rb_funcall(*p2,na_id_abs,0);"]
 )
 
@@ -242,33 +244,33 @@ mkfuncs('Real',$real_types,$data_types,[nil] +
 
 mkfuncs('Imag',$real_types,$data_types,[nil] +
  ["*p1 = 0;"]*6 + 
- ["*p1 = p2->i;"]*2 +
+ ["*p1 = p2.i;"]*2 +
  [nil]
 )
 
 mkfuncs('Angl',$real_types,$data_types,[nil] +
  [nil]*6 +
- ["*p1 = atan2(p2->i,p2->r);"]*2 +
+ ["*p1 = atan2(p2.i,p2.r);"]*2 +
  [nil]
 )
 
 mkfuncs('ImagMul',$comp_types,$data_types,[nil] +
  [nil]*4 +
- ["p1->r = 0; p1->i = *p2;"]*2 + 
- ["p1->r = -p2->i; p1->i = p2->r;"]*2 +
+ ["p1.r = 0; p1.i = *p2;"]*2 + 
+ ["p1.r = -p2.i; p1.i = p2.r;"]*2 +
  [nil]
 )
 
 mkfuncs('Conj',$data_types,$data_types,[nil] +
  ['copy']*6 + 
- ["p1->r = p2->r; p1->i = -p2->i;"]*2 +
+ ["p1.r = p2.r; p1.i = -p2.i;"]*2 +
  [nil]
 )
 
 mkfuncs('Not', [$data_types[1]]*10, $data_types,
  [nil] +
  ["*p1 = (*p2==0) ? 1:0;"]*6 +
- ["*p1 = (p2->r==0 && p2->i==0) ? 1:0;"]*2 +
+ ["*p1 = (p2.r==0 && p2.i==0) ? 1:0;"]*2 +
  ["*p1 = RTEST(*p2) ? 0:1;"]
 )
 
@@ -319,17 +321,18 @@ mksortfuncs('SortIdx', $data_types, $data_types, [nil] +
 $func_body = 
   "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, int p2, na_shape_t i2)
 {
-  for (; n; --n) {
+  int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
     OPERATION
-    p1+=i1; p2+=i2;
   }
 }
 "
 mkfuncs('IndGen',$data_types,[$data_types[3]]*9,
  [nil] +
  ["*p1 = (typef)p2;"]*6 +
- ["p1->r = (typef)p2;
-   p1->i = 0;"]*2 +
+ ["p1.r = (typef)p2;
+   p1.i = 0;"]*2 +
  ["*p1 = INT2FIX(p2);"]
 )
 
@@ -344,38 +347,44 @@ $func_body =
 mkfuncs('ToStr',['']+[$data_types[9]]*9,$data_types,
  [nil] +
  ["char buf[22];
-  for (; n; --n) {
+  int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
     sprintf(buf,\"%i\",(int)*p2);
     *p1 = rb_str_new2(buf);
-    p1+=i1; p2+=i2;
   }"]*4 +
  ["char buf[24];
-  for (; n; --n) {
+  int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
     sprintf(buf,\"%.5g\",(double)*p2);
     *p1 = rb_str_new2(buf);
-    p1+=i1; p2+=i2;
   }"] +
  ["char buf[24];
-  for (; n; --n) {
+  int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
     sprintf(buf,\"%.8g\",(double)*p2);
     *p1 = rb_str_new2(buf);
-    p1+=i1; p2+=i2;
   }"] +
  ["char buf[50];
-  for (; n; --n) {
-    sprintf(buf,\"%.5g%+.5gi\",(double)p2->r,(double)p2->i);
+  int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
+    sprintf(buf,\"%.5g%+.5gi\",(double)p2.r,(double)p2.i);
     *p1 = rb_str_new2(buf);
-    p1+=i1; p2+=i2;
   }"] +
  ["char buf[50];
-  for (; n; --n) {
-    sprintf(buf,\"%.8g%+.8gi\",(double)p2->r,(double)p2->i);
+  int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
+    sprintf(buf,\"%.8g%+.8gi\",(double)p2.r,(double)p2.i);
     *p1 = rb_str_new2(buf);
-    p1+=i1; p2+=i2;
   }"] +
- ["for (; n; --n) {
+ ["int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
     *p1 = rb_obj_as_string(*p2);
-    p1+=i1; p2+=i2;
   }"]
 )
 
@@ -421,18 +430,18 @@ mkfuncs('Insp',['']+[$data_types[9]]*9,$data_types,
   na_str_append_fp(buf);
   *p1 = rb_str_new2(buf);"] +
  ["char buf[50], *b;
-  sprintf(buf,\"%g\",(double)p2->r);
+  sprintf(buf,\"%g\",(double)p2.r);
   na_str_append_fp(buf);
   b = buf+strlen(buf);
-  sprintf(b,\"%+g\",(double)p2->i);
+  sprintf(b,\"%+g\",(double)p2.i);
   na_str_append_fp(b);
   strcat(buf,\"i\");
   *p1 = rb_str_new2(buf);"] +
  ["char buf[50], *b;
-  sprintf(buf,\"%g\",(double)p2->r);
+  sprintf(buf,\"%g\",(double)p2.r);
   na_str_append_fp(buf);
   b = buf+strlen(buf);
-  sprintf(b,\"%+g\",(double)p2->i);
+  sprintf(b,\"%+g\",(double)p2.i);
   na_str_append_fp(b);
   strcat(buf,\"i\");
   *p1 = rb_str_new2(buf);"] +
@@ -472,9 +481,10 @@ mkfuncs('MulB', $data_types, $data_types,
 $func_body = 
   "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
 {
-  for (; n; --n) {
+  int i;
+  #pragma omp parallel for
+  for (i=0; i<n; i++) {
     OPERATION
-    p1+=i1; p2+=i2; p3+=i3;
   }
 }
 "
@@ -482,16 +492,16 @@ $func_body =
 mkfuncs('AddB', $data_types, $data_types,
  [nil] +
  ["*p1 = *p2 + *p3;"]*6 + 
- ["p1->r = p2->r + p3->r;
-    p1->i = p2->i + p3->i;"]*2 +
+ ["p1.r = p2.r + p3.r;
+    p1.i = p2.i + p3.i;"]*2 +
  ["*p1 = rb_funcall(*p2,'+',1,*p3);"]
 )
 
 mkfuncs('SbtB', $data_types, $data_types,
  [nil] +
  ["*p1 = *p2 - *p3;"]*6 + 
- ["p1->r = p2->r - p3->r;
-    p1->i = p2->i - p3->i;"]*2 +
+ ["p1.r = p2.r - p3.r;
+    p1.i = p2.i - p3.i;"]*2 +
  ["*p1 = rb_funcall(*p2,'-',1,*p3);"]
 )
 
@@ -499,8 +509,8 @@ mkfuncs('MulB', $data_types, $data_types,
  [nil] +
  ["*p1 = *p2 * *p3;"]*6 + 
  ["type1 x = *p2;
-    p1->r = x.r*p3->r - x.i*p3->i;
-    p1->i = x.r*p3->i + x.i*p3->r;"]*2 +
+    p1.r = x.r*p3.r - x.i*p3.i;
+    p1.i = x.r*p3.i + x.i*p3.r;"]*2 +
  ["*p1 = rb_funcall(*p2,'*',1,*p3);"]
 )
 
@@ -510,9 +520,9 @@ mkfuncs('DivB', $data_types, $data_types,
     *p1 = *p2 / *p3;"]*4 +
  ["*p1 = *p2 / *p3;"]*2 +
  ["type1 x = *p2;
-    typef a = p3->r*p3->r + p3->i*p3->i;
-    p1->r = (x.r*p3->r + x.i*p3->i)/a;
-    p1->i = (x.i*p3->r - x.r*p3->i)/a;"]*2 +
+    typef a = p3.r*p3.r + p3.i*p3.i;
+    p1.r = (x.r*p3.r + x.i*p3.i)/a;
+    p1.i = (x.i*p3.r - x.r*p3.i)/a;"]*2 +
  ["*p1 = rb_funcall(*p2,'/',1,*p3);"]
 )
 
@@ -530,8 +540,8 @@ mkfuncs('MulAdd', $data_types, $data_types,
  [nil] +
  ["*p1 += *p2 * *p3;"]*6 + 
  ["type1 x = *p2;
-    p1->r += x.r*p3->r - x.i*p3->i;
-    p1->i += x.r*p3->i + x.i*p3->r;"]*2 +
+    p1.r += x.r*p3.r - x.i*p3.i;
+    p1.i += x.r*p3.i + x.i*p3.r;"]*2 +
  ["*p1 = rb_funcall(*p1,'+',1,
     rb_funcall(*p2,'*',1,*p3));"]
 )
@@ -540,8 +550,8 @@ mkfuncs('MulSbt', $data_types, $data_types,
  [nil] +
  ["*p1 -= *p2 * *p3;"]*6 + 
  ["type1 x = *p2;
-    p1->r -= x.r*p3->r - x.i*p3->i;
-    p1->i -= x.r*p3->i + x.i*p3->r;"]*2 +
+    p1.r -= x.r*p3.r - x.i*p3.i;
+    p1.i -= x.r*p3.i + x.i*p3.r;"]*2 +
  ["*p1 = rb_funcall(*p1,'-',1,
     rb_funcall(*p2,'*',1,*p3));"]
 )
@@ -580,7 +590,7 @@ mkfuncs('BXo', $data_types, $data_types,
 mkfuncs('Eql', [$data_types[1]]*10, $data_types,
  [nil] +
  ["*p1 = (*p2==*p3) ? 1:0;"]*6 +
- ["*p1 = (p2->r==p3->r) && (p2->i==p3->i) ? 1:0;"]*2 +
+ ["*p1 = (p2.r==p3.r) && (p2.i==p3.i) ? 1:0;"]*2 +
  ["*p1 = RTEST(rb_equal(*p2, *p3)) ? 1:0;"]
 )
 
@@ -597,21 +607,21 @@ mkfuncs('Cmp', [$data_types[1]]*10, $data_types,
 mkfuncs('And', [$data_types[1]]*10, $data_types,
  [nil] +
  ["*p1 = (*p2!=0 && *p3!=0) ? 1:0;"]*6 +
- ["*p1 = ((p2->r!=0||p2->i!=0) && (p3->r!=0||p3->i!=0)) ? 1:0;"]*2 +
+ ["*p1 = ((p2.r!=0||p2.i!=0) && (p3.r!=0||p3.i!=0)) ? 1:0;"]*2 +
  ["*p1 = (RTEST(*p2) && RTEST(*p3)) ? 1:0;"]
 )
 
 mkfuncs('Or_', [$data_types[1]]*10, $data_types,
  [nil] +
  ["*p1 = (*p2!=0 || *p3!=0) ? 1:0;"]*6 +
- ["*p1 = ((p2->r!=0||p2->i!=0) || (p3->r!=0||p3->i!=0)) ? 1:0;"]*2 +
+ ["*p1 = ((p2.r!=0||p2.i!=0) || (p3.r!=0||p3.i!=0)) ? 1:0;"]*2 +
  ["*p1 = (RTEST(*p2) || RTEST(*p3)) ? 1:0;"]
 )
 
 mkfuncs('Xor', [$data_types[1]]*10, $data_types,
  [nil] +
  ["*p1 = ((*p2!=0) == (*p3!=0)) ? 0:1;"]*6 +
- ["*p1 = ((p2->r!=0||p2->i!=0) == (p3->r!=0||p3->i!=0)) ? 0:1;"]*2 +
+ ["*p1 = ((p2.r!=0||p2.i!=0) == (p3.r!=0||p3.i!=0)) ? 0:1;"]*2 +
  ["*p1 = (RTEST(*p2) == RTEST(*p3)) ? 0:1;"]
 )
 
@@ -633,19 +643,20 @@ mkfuncs('atan2', $data_types, $data_types,
 $func_body = 
   "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
 {
-  for (; n; --n) {
+  int i, j=0;
+  for (i=0; i<n; i++) {
     OPERATION
   }
 }
 "
 mkfuncs('RefMask',$data_types,$data_types,
  [nil] +
- ["if (*(u_int8_t*)p3) { *p1=*p2; p1+=i1; }
-    p3+=i3; p2+=i2;"]*9
+ ["if (*(u_int8_t*)p3) { *p1=*p2; j+=1; }"]*9,
+ ["j","i","i"]
 )
 
 mkfuncs('SetMask',$data_types,$data_types,
  [nil] +
- ["if (*(u_int8_t*)p3) { *p1=*p2; p2+=i2; }
-    p3+=i3; p1+=i1;"]*9
+ ["if (*(u_int8_t*)p3) { *p1=*p2; j+=1; };"]*9,
+ ["i","j","i"]
 )

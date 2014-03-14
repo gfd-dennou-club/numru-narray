@@ -62,10 +62,10 @@ def mksetfuncs(name,op,id,funcs)
 	    f = k[2]
 	  #end
 	  f = f.
-	    gsub(/p1->/,"((#{td[i]}*)p1)->").
-	    gsub(/p2->/,"((#{td[j]}*)p2)->").
-	    gsub(/\*p1/,"*(#{td[i]}*)p1").
-	    gsub(/\*p2/,"*(#{td[j]}*)p2").
+	    gsub(/p1\./,"((#{td[i]}*)p1)[i].").
+	    gsub(/p2\./,"((#{td[j]}*)p2)[i].").
+	    gsub(/\*p1/,"((#{td[i]}*)p1)[i]").
+	    gsub(/\*p2/,"((#{td[j]}*)p2)[i]").
 	    gsub(/ = /," = (#{tr[i]})").
             gsub(/#id/,id).
             gsub(/#op/,op).
@@ -108,7 +108,7 @@ end
 
 
 
-def mkfuncs(name,t1,t2,func)
+def mkfuncs(name,t1,t2,func,idx=["i"]*3)
 
   print "
 /* ------------------------- #{name} --------------------------- */\n"
@@ -118,16 +118,25 @@ def mkfuncs(name,t1,t2,func)
 
   for i in 0...c.size
     if func[i] != nil && func[i] != "copy"
-      f = func[i].
-	gsub(/p1->/,"((#{t1[i]}*)p1)->").
-	gsub(/p2->/,"((#{t2[i]}*)p2)->").
-	gsub(/p3->/,"((#{t2[i]}*)p3)->").
-	gsub(/\*p1/,"*(#{t1[i]}*)p1").
-	gsub(/\*p2/,"*(#{t2[i]}*)p2").
-	gsub(/\*p3/,"*(#{t2[i]}*)p3").
-	gsub(/type1/,td[i]).
-	gsub(/typec/,t1[i]).
-	gsub(/typef/,tr[i])
+      if /Insp/ =~ name
+        f = func[i].
+          gsub(/p2\./,"(*((#{t2[i]}*)p2)).").
+          gsub(/\*p1/,"*((#{t1[i]}*)p1)").
+          gsub(/\*p2/,"*((#{t2[i]}*)p2)")
+      else
+        f = func[i].
+          gsub(/p1\./,"(*((#{t1[i]}*)(p1+#{idx[0]}*i1))).").
+          gsub(/p2\./,"(*((#{t2[i]}*)(p2+#{idx[1]}*i2))).").
+          gsub(/p3\./,"(*((#{t2[i]}*)(p3+#{idx[2]}*i3))).").
+          gsub(/\*p1/,"*((#{t1[i]}*)(p1+#{idx[0]}*i1))").
+          gsub(/\*p2/,"*((#{t2[i]}*)(p2+#{idx[1]}*i2))").
+          gsub(/\*p3/,"*((#{t2[i]}*)(p3+#{idx[2]}*i3))").
+          gsub(/p2;/,'p2+i*i2;')
+      end
+      f = f.
+        gsub(/type1/,td[i]).
+        gsub(/typec/,t1[i]).
+        gsub(/typef/,tr[i])
       puts $func_body.
 	gsub(/type1/,td[i]).
 	gsub(/typec/,t1[i]).
