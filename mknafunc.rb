@@ -142,7 +142,7 @@ def mkfuncs(name,t1,t2,func,idx=["i"]*3)
 	gsub(/typec/,t1[i]).
 	gsub(/typef/,tr[i]).
 	gsub(/#name/,name).
-	sub(/OPERATION/,f).
+	gsub(/OPERATION/,f).
 	gsub(/#C/,c[i])
     end
   end
