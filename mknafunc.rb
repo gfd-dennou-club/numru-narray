@@ -131,6 +131,7 @@ def mkfuncs(name,t1,t2,func,idx=["i"]*3)
           gsub(/\*p1/,"*((#{t1[i]}*)(p1+#{idx[0]}*i1))").
           gsub(/\*p2/,"*((#{t2[i]}*)(p2+#{idx[1]}*i2))").
           gsub(/\*p3/,"*((#{t2[i]}*)(p3+#{idx[2]}*i3))").
+          gsub(/\(u_int8_t\*\)p3/,"(u_int8_t*)(p3+#{idx[2]}*i3)").
           gsub(/p2;/,'p2+i*i2;')
       end
       f = f.
