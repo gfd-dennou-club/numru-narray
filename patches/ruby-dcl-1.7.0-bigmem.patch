@@ -1,7 +1,7 @@
 diff -uNr ruby-dcl-1.7.0_org/dcl.h ruby-dcl-1.7.0/dcl.h
 --- ruby-dcl-1.7.0_org/dcl.h	1970-01-01 09:00:00.000000000 +0900
-+++ ruby-dcl-1.7.0/dcl.h	2015-01-21 20:17:53.807837668 +0900
-@@ -0,0 +1,163 @@
++++ ruby-dcl-1.7.0/dcl.h	2015-01-21 21:06:01.273853421 +0900
+@@ -0,0 +1,169 @@
 +#include <math.h>
 +#include "ruby.h"
 +#include "libtinyf2c.h"
@@ -34,6 +34,12 @@ diff -uNr ruby-dcl-1.7.0_org/dcl.h ruby-dcl-1.7.0/dcl.h
 +#ifndef StringValuePtr
 +#define StringValuePtr(s) STR2CSTR(s)
 +#endif
++
++/* for compatibility for NArray and NArray with bigmem patch */
++#ifndef NARRAY_BIGMEM
++typedef int    na_shape_t;
++#endif
++
 +
 +/*  functions  */
 +VALUE dcl_ccharary2obj(char *, int, int);
