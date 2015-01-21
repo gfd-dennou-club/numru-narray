@@ -65,6 +65,26 @@ if /cygwin|mingw/ =~ RUBY_PLATFORM
   end
 end
 
+
+case RbConfig::CONFIG["CC"]
+when "gcc"
+  omp_opt = "-fopenmp"
+else
+  omp_opt = nil
+end
+omp_opt = arg_config("--openmp", omp_opt)
+
+omp_opt = nil if omp_opt.to_s.empty?
+
+if omp_opt
+  $CFLAGS << " " << omp_opt
+  $DLDFLAGS << " " << omp_opt
+  warn "OpenMP support: ON"
+else
+  warn "OpenMP support: OFF"
+  warn "if you want to enable openmp, set --openmp=compile_option"
+end
+
 #$DEBUG = true
 #$CFLAGS = ["-Wall",$CFLAGS].join(" ")
 
