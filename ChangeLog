@@ -1,6 +1,18 @@
 2015-01-21 Seiya Nishizawa <seiya@gfd-dennou.org>
 
+	* add mkchangelog.sh to create ChangeLog from git log
+
+2015-01-21 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* add patch for ruby-dcl and ruby-netcdf
+
+2015-01-21 Seiya Nishizawa <seiya@gfd-dennou.org>
+
 	* add README for NArrayBigmem
+
+2015-01-21 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* rename README to README_NARRAY
 
 2015-01-21 Seiya Nishizawa <seiya@gfd-dennou.org>
 
