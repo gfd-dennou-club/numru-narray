@@ -1,0 +1,646 @@
+diff -uNr ruby-netcdf-0.6.6_org/lib/netcdf.rb ruby-netcdf-0.6.6/lib/netcdf.rb
+--- ruby-netcdf-0.6.6_org/lib/netcdf.rb	2012-02-19 15:18:03.000000000 +0900
++++ ruby-netcdf-0.6.6/lib/netcdf.rb	2015-01-21 19:37:50.471363018 +0900
+@@ -1,7 +1,26 @@
++# coding: utf-8
+ require 'narray'
+ require 'numru/netcdfraw'
+ 
+-# NetCDF$B%/%i%9$K4X$7$F(B
++if NArray.constants.map{|s| s.to_sym}.include?(:SUPPORT_BIGMEM) && NArray::SUPPORT_BIGMEM
++  unless NumRu::NetCDF::SUPPORT_BIGMEM
++    $stderr.print <<EOM
++Ruby-NetCDF was compiled with NArray without big memory patch.
++However loaded NArray is big memory support version.
++EOM
++    raise "check and use consistent version"
++  end
++else
++  if NumRu::NetCDF::SUPPORT_BIGMEM
++    $stderr.print <<EOM
++Ruby-NetCDF was compiled with NArray with big memory patch.
++However loaded NArray is not big memory support version.
++EOM
++    raise "check and use consistent version"
++  end
++end
++
++# NetCDFクラスに関して
+ module NumRu
+   class NetCDF
+ 
+@@ -218,7 +237,7 @@
+     
+   end
+   
+-  #NetCDFVar class $B$K4X$7$F(B
++  #NetCDFVar class に関して
+   class NetCDFVar
+     
+     class << NetCDFVar
+diff -uNr ruby-netcdf-0.6.6_org/netcdfraw.c ruby-netcdf-0.6.6/netcdfraw.c
+--- ruby-netcdf-0.6.6_org/netcdfraw.c	2012-02-19 15:18:03.000000000 +0900
++++ ruby-netcdf-0.6.6/netcdfraw.c	2015-01-21 19:36:33.316710811 +0900
+@@ -202,7 +202,7 @@
+   ptr = (int32_t *) NA_PTR(na,0); \
+ }
+ 
+-#define NC_RAISE(status) rb_raise(err_status2class(status),(nc_strerror(status)))
++#define NC_RAISE(status) rb_raise(err_status2class(status),"%s", (nc_strerror(status)))
+ #define NC_RAISE2(status, str) rb_raise(err_status2class(status),"%s (%s)",nc_strerror(status),(str) )
+ 
+ static VALUE mNumRu = 0;
+@@ -343,9 +343,8 @@
+ void
+ NetCDF_free(struct Netcdf *Netcdffile)
+ {
+-  int status;
+   if (!Netcdffile->closed){
+-      status = nc_close(Netcdffile->ncid); /* no error check -- not to stop during GC */
++    nc_close(Netcdffile->ncid); /* no error check -- not to stop during GC */
+   }
+   free(Netcdffile->name); 
+   free(Netcdffile);
+@@ -426,6 +425,7 @@
+     case(NC_FATAL):
+       return(rb_eNetcdfFatal);break;
+     }
++  return rb_eNetcdfError;
+ }
+ 
+ static const char*
+@@ -1561,7 +1561,7 @@
+   struct NetCDFAtt *Netcdf_att;
+   nc_type xtypep;
+   size_t lenp;
+-  int attlen[1];    /* NArray uses int instead of size_t */
++  na_shape_t attlen[1];
+   char *tp;
+   unsigned char *up;
+   short *sp;
+@@ -1937,7 +1937,7 @@
+   int ndimsp;
+   int *dimids;
+   size_t lengthp;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   VALUE NArray;
+ 
+   Data_Get_Struct(Var,struct NetCDFVar,Netcdf_var);
+@@ -1947,7 +1947,7 @@
+   if(status != NC_NOERR) NC_RAISE(status);
+   dimids = ALLOCA_N(int,ndimsp);
+   if (ndimsp != 0){
+-      shape = ALLOCA_N(int,ndimsp);
++      shape = ALLOCA_N(na_shape_t,ndimsp);
+       for(i=0;i<ndimsp;i++){
+ 	  status = nc_inq_vardimid(ncid,varid,dimids);
+ 	  if(status != NC_NOERR) NC_RAISE(status);
+@@ -1956,7 +1956,7 @@
+       }
+   } else {
+       ndimsp = 1;
+-      shape = ALLOCA_N(int,1);
++      shape = ALLOCA_N(na_shape_t,1);
+       shape[0]=1;
+   }
+ 
+@@ -1981,7 +1981,7 @@
+   int ndimsp;
+   int *dimids;
+   size_t lengthp;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   VALUE NArray;
+ 
+   Data_Get_Struct(Var,struct NetCDFVar,Netcdf_var);
+@@ -1991,7 +1991,7 @@
+   if(status != NC_NOERR) NC_RAISE(status);
+   dimids = ALLOCA_N(int,ndimsp);
+   if (ndimsp != 0){
+-      shape = ALLOCA_N(int,ndimsp);
++      shape = ALLOCA_N(na_shape_t,ndimsp);
+       for(i=0;i<ndimsp;i++){
+ 	  status = nc_inq_vardimid(ncid,varid,dimids);
+ 	  if(status != NC_NOERR) NC_RAISE(status);
+@@ -2000,7 +2000,7 @@
+       }
+   } else {
+       ndimsp = 1;
+-      shape = ALLOCA_N(int,1);
++      shape = ALLOCA_N(na_shape_t,1);
+       shape[0]=1;
+   }
+ 
+@@ -2025,7 +2025,7 @@
+   int ndimsp;
+   int *dimids;
+   size_t lengthp;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   VALUE NArray;
+ 
+   Data_Get_Struct(Var,struct NetCDFVar,Netcdf_var);
+@@ -2035,7 +2035,7 @@
+   if(status != NC_NOERR) NC_RAISE(status);
+   dimids = ALLOCA_N(int,ndimsp);
+   if (ndimsp != 0){
+-      shape = ALLOCA_N(int,ndimsp);
++      shape = ALLOCA_N(na_shape_t,ndimsp);
+       for(i=0;i<ndimsp;i++){
+ 	  status = nc_inq_vardimid(ncid,varid,dimids);
+ 	  if(status != NC_NOERR) NC_RAISE(status);
+@@ -2044,7 +2044,7 @@
+       }
+   } else {
+       ndimsp = 1;
+-      shape = ALLOCA_N(int,1);
++      shape = ALLOCA_N(na_shape_t,1);
+       shape[0]=1;
+   }
+ 
+@@ -2069,7 +2069,7 @@
+   int ndimsp;
+   int *dimids;
+   size_t lengthp;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   VALUE NArray;
+ 
+   Data_Get_Struct(Var,struct NetCDFVar,Netcdf_var);
+@@ -2079,7 +2079,7 @@
+   if(status != NC_NOERR) NC_RAISE(status);
+   dimids = ALLOCA_N(int,ndimsp);
+   if (ndimsp != 0){
+-      shape = ALLOCA_N(int,ndimsp);
++      shape = ALLOCA_N(na_shape_t,ndimsp);
+       for(i=0;i<ndimsp;i++){
+ 	  status = nc_inq_vardimid(ncid,varid,dimids);
+ 	  if(status != NC_NOERR) NC_RAISE(status);
+@@ -2088,7 +2088,7 @@
+       }
+   } else {
+       ndimsp = 1;
+-      shape = ALLOCA_N(int,1);
++      shape = ALLOCA_N(na_shape_t,1);
+       shape[0]=1;
+   }
+ 
+@@ -2113,7 +2113,7 @@
+   int ndimsp;
+   int *dimids;
+   size_t lengthp;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   VALUE NArray;
+ 
+   Data_Get_Struct(Var,struct NetCDFVar,Netcdf_var);
+@@ -2123,7 +2123,7 @@
+   if(status != NC_NOERR) NC_RAISE(status);
+   dimids = ALLOCA_N(int,ndimsp);
+   if (ndimsp != 0){
+-      shape = ALLOCA_N(int,ndimsp);
++      shape = ALLOCA_N(na_shape_t,ndimsp);
+       for(i=0;i<ndimsp;i++){
+ 	  status = nc_inq_vardimid(ncid,varid,dimids);
+ 	  if(status != NC_NOERR) NC_RAISE(status);
+@@ -2132,7 +2132,7 @@
+       }
+   } else {
+       ndimsp = 1;
+-      shape = ALLOCA_N(int,1);
++      shape = ALLOCA_N(na_shape_t,1);
+       shape[0]=1;
+   }
+ 
+@@ -2157,7 +2157,7 @@
+   int ndimsp;
+   int *dimids;
+   size_t lengthp;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   VALUE NArray;
+ 
+   Data_Get_Struct(Var,struct NetCDFVar,Netcdf_var);
+@@ -2167,7 +2167,7 @@
+   if(status != NC_NOERR) NC_RAISE(status);
+   dimids = ALLOCA_N(int,ndimsp);
+   if (ndimsp != 0){
+-      shape = ALLOCA_N(int,ndimsp);
++      shape = ALLOCA_N(na_shape_t,ndimsp);
+       for(i=0;i<ndimsp;i++){
+ 	  status = nc_inq_vardimid(ncid,varid,dimids);
+ 	  if(status != NC_NOERR) NC_RAISE(status);
+@@ -2176,7 +2176,7 @@
+       }
+   } else {
+       ndimsp = 1;
+-      shape = ALLOCA_N(int,1);
++      shape = ALLOCA_N(na_shape_t,1);
+       shape[0]=1;
+   }
+ 
+@@ -2203,7 +2203,7 @@
+   int ndims;
+   int dimids[NC_MAX_DIMS];
+   size_t dimlen;
+-  int *c_count;
++  na_shape_t *c_count;
+   int nc_tlen=0;
+   VALUE NArray;
+ 
+@@ -2223,7 +2223,7 @@
+   }
+   
+   c_start=ALLOCA_N(size_t,ndims);
+-  c_count=ALLOCA_N(int,ndims);
++  c_count=ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     l_start = NUM2INT(RARRAY_PTR(start)[ndims-1-i]);
+     status = nc_inq_vardimid(ncid,varid,dimids);
+@@ -2265,7 +2265,7 @@
+   int ndims;
+   int dimids[NC_MAX_DIMS];
+   size_t dimlen;
+-  int *c_count;
++  na_shape_t *c_count;
+   int nc_tlen=0;
+   VALUE NArray;
+ 
+@@ -2285,7 +2285,7 @@
+   }
+   
+   c_start=ALLOCA_N(size_t,ndims);
+-  c_count=ALLOCA_N(int,ndims);
++  c_count=ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     l_start = NUM2INT(RARRAY_PTR(start)[ndims-1-i]);
+     status = nc_inq_vardimid(ncid,varid,dimids);
+@@ -2327,7 +2327,7 @@
+   int ndims;
+   int dimids[NC_MAX_DIMS];
+   size_t dimlen;
+-  int *c_count;
++  na_shape_t *c_count;
+   int nc_tlen=0;
+   VALUE NArray;
+ 
+@@ -2346,7 +2346,7 @@
+   }
+   
+   c_start=ALLOCA_N(size_t,ndims);
+-  c_count=ALLOCA_N(int,ndims);
++  c_count=ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     l_start = NUM2INT(RARRAY_PTR(start)[ndims-1-i]);
+     status = nc_inq_vardimid(ncid,varid,dimids);
+@@ -2385,7 +2385,7 @@
+   int ndims;
+   int dimids[NC_MAX_DIMS];
+   size_t dimlen;
+-  int *c_count;
++  na_shape_t *c_count;
+   int nc_tlen=0;
+   VALUE NArray;
+ 
+@@ -2404,7 +2404,7 @@
+   }
+   
+   c_start=ALLOCA_N(size_t,ndims);
+-  c_count=ALLOCA_N(int,ndims);
++  c_count=ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     l_start = NUM2INT(RARRAY_PTR(start)[ndims-1-i]);
+     status = nc_inq_vardimid(ncid,varid,dimids);
+@@ -2443,7 +2443,7 @@
+   int ndims;
+   int dimids[NC_MAX_DIMS];
+   size_t dimlen;
+-  int *c_count;
++  na_shape_t *c_count;
+   int nc_tlen=0;
+   VALUE NArray;
+ 
+@@ -2462,7 +2462,7 @@
+   }
+   
+   c_start=ALLOCA_N(size_t,ndims);
+-  c_count=ALLOCA_N(int,ndims);
++  c_count=ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     l_start = NUM2INT(RARRAY_PTR(start)[ndims-1-i]);
+     status = nc_inq_vardimid(ncid, varid, dimids);
+@@ -2501,7 +2501,7 @@
+   int ndims;
+   int dimids[NC_MAX_DIMS];
+   size_t dimlen;
+-  int *c_count;
++  na_shape_t *c_count;
+   int nc_tlen=0;
+   VALUE NArray;
+ 
+@@ -2520,7 +2520,7 @@
+   }
+   
+   c_start=ALLOCA_N(size_t,ndims);
+-  c_count=ALLOCA_N(int,ndims);
++  c_count=ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     l_start = NUM2INT(RARRAY_PTR(start)[ndims-1-i]);
+     status = nc_inq_vardimid(ncid,varid,dimids);
+@@ -2558,7 +2558,7 @@
+   size_t *c_start;
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   int ndims;
+   int *dimids;
+   int nc_tlen=1;
+@@ -2643,7 +2643,7 @@
+   }
+ 
+   
+-  shape = ALLOCA_N(int,ndims);
++  shape = ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     shape[ndims-1-i]=c_count[i];
+   }
+@@ -2670,7 +2670,7 @@
+   size_t *c_start;
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   int ndims;
+   int *dimids;
+   int nc_tlen=1;
+@@ -2755,7 +2755,7 @@
+   }
+ 
+   
+-  shape = ALLOCA_N(int,ndims);
++  shape = ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     shape[ndims-1-i]=c_count[i];
+   }
+@@ -2782,7 +2782,7 @@
+   size_t *c_start;
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   int ndims;
+   int *dimids;
+   int nc_tlen=1;
+@@ -2867,7 +2867,7 @@
+     nc_tlen = nc_tlen*c_count[i];
+   }
+   
+-  shape = ALLOCA_N(int,ndims);
++  shape = ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     shape[ndims-1-i]=c_count[i];
+   }
+@@ -2895,7 +2895,7 @@
+   size_t *c_start;
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   int ndims;
+   int *dimids;
+   int nc_tlen=1;
+@@ -2980,7 +2980,7 @@
+     nc_tlen = nc_tlen*c_count[i];
+   }
+   
+-  shape = ALLOCA_N(int,ndims);
++  shape = ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     shape[ndims-1-i]=c_count[i];
+   }
+@@ -3008,7 +3008,7 @@
+   size_t *c_start;
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   int ndims;
+   int *dimids;
+   int nc_tlen=1;
+@@ -3093,7 +3093,7 @@
+     nc_tlen = nc_tlen*c_count[i];
+   }
+ 
+-  shape = ALLOCA_N(int,ndims);
++  shape = ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     shape[ndims-1-i]=c_count[i];
+   }
+@@ -3121,7 +3121,7 @@
+   size_t *c_start;
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+-  int *shape;    /* NArray uses int instead of size_t */
++  na_shape_t *shape;
+   int ndims;
+   int *dimids;
+   int nc_tlen=1;
+@@ -3206,7 +3206,7 @@
+     nc_tlen = nc_tlen*c_count[i];
+   }
+ 
+-  shape = ALLOCA_N(int,ndims);
++  shape = ALLOCA_N(na_shape_t,ndims);
+   for(i=0;i<ndims;i++){
+     shape[ndims-1-i]=c_count[i];
+   }
+@@ -3228,7 +3228,8 @@
+   int varid;
+   int status;
+   unsigned char *ptr,scalar;
+-  int len,i=0;
++  int i=0;
++  na_shape_t len;
+   struct NetCDFVar *Netcdf_var;
+   int nc_tlen=1;
+   int ndimsp;
+@@ -3273,7 +3274,8 @@
+   int varid;
+   int status;
+   unsigned char *ptr,scalar;
+-  int len,i=0;
++  int i=0;
++  na_shape_t len;
+   struct NetCDFVar *Netcdf_var;
+   int nc_tlen=1;
+   int ndimsp;
+@@ -3318,7 +3320,8 @@
+   int varid;
+   int status;
+   short *ptr,scalar;
+-  int len,i=0;
++  int i=0;
++  na_shape_t len;
+   struct NetCDFVar *Netcdf_var;
+   int nc_tlen=1;
+   int ndimsp;
+@@ -3363,7 +3366,8 @@
+   int varid;
+   int status;
+   int *ptr,scalar;
+-  int len,i=0;
++  int i=0;
++  na_shape_t len;
+   struct NetCDFVar *Netcdf_var;
+   int nc_tlen=1;
+   int ndimsp;
+@@ -3411,7 +3415,8 @@
+   int varid;
+   int status;
+   float *ptr,scalar;
+-  int len,i=0;
++  int i=0;
++  na_shape_t len;
+   struct NetCDFVar *Netcdf_var;
+   int nc_tlen=1;
+   int ndimsp;
+@@ -3458,7 +3463,8 @@
+   int varid;
+   int status;
+   double *ptr,scalar;
+-  int len,i=0;
++  int i=0;
++  na_shape_t len;
+   struct NetCDFVar *Netcdf_var;
+   int nc_tlen=1;
+   int ndimsp;
+@@ -3811,7 +3817,8 @@
+   int varid;
+   int status;
+   unsigned char *ptr,scalar;
+-  int len,i;
++  int i;
++  na_shape_t len;
+   int c_count_all=1;
+   struct NetCDFVar *Netcdf_var;
+   long l_start, l_end;
+@@ -3819,7 +3826,7 @@
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+   int ndims;
+-  int   *shape;
++  na_shape_t *shape;
+   int   *dimids;
+   size_t dimlen;
+ 
+@@ -3917,7 +3924,8 @@
+   int varid;
+   int status;
+   unsigned char *ptr,scalar;
+-  int len,i;
++  int i;
++  na_shape_t len;
+   int c_count_all=1;
+   struct NetCDFVar *Netcdf_var;
+   long l_start, l_end;
+@@ -3925,7 +3933,7 @@
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+   int ndims;
+-  int   *shape;
++  na_shape_t *shape;
+   int   *dimids;
+   size_t dimlen;
+ 
+@@ -4023,7 +4031,8 @@
+   int varid;
+   int status;
+   short *ptr,scalar;
+-  int len,i;
++  int i;
++  na_shape_t len;
+   int c_count_all=1;
+   struct NetCDFVar *Netcdf_var;
+   long l_start, l_end;
+@@ -4031,7 +4040,7 @@
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+   int ndims;
+-  int   *shape;
++  na_shape_t *shape;
+   int   *dimids;
+   size_t dimlen;
+ 
+@@ -4130,7 +4139,8 @@
+   int varid;
+   int status;
+   int *ptr,scalar;
+-  int len,i;
++  int i;
++  na_shape_t len;
+   int c_count_all=1;
+   struct NetCDFVar *Netcdf_var;
+   long l_start, l_end;
+@@ -4138,7 +4148,7 @@
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+   int ndims;
+-  int   *shape;
++  na_shape_t *shape;
+   int   *dimids;
+   size_t dimlen;
+ 
+@@ -4237,7 +4247,8 @@
+   int varid;
+   int status;
+   float *ptr,scalar;
+-  int len,i;
++  int i;
++  na_shape_t len;
+   int c_count_all=1;
+   struct NetCDFVar *Netcdf_var;
+   long l_start, l_end;
+@@ -4245,7 +4256,7 @@
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+   int ndims;
+-  int   *shape;
++  na_shape_t *shape;
+   int   *dimids;
+   size_t dimlen;
+ 
+@@ -4344,7 +4355,8 @@
+   int varid;
+   int status;
+   double *ptr,scalar;
+-  int len,i;
++  int i;
++  na_shape_t len;
+   int c_count_all=1;
+   struct NetCDFVar *Netcdf_var;
+   long l_start, l_end;
+@@ -4352,7 +4364,7 @@
+   size_t *c_count;
+   ptrdiff_t *c_stride;
+   int ndims;
+-  int   *shape;
++  na_shape_t *shape;
+   int   *dimids;
+   size_t dimlen;
+ 
+@@ -4499,6 +4511,13 @@
+   rb_define_const(cNetCDF, "NC_CLOBBER", INT2FIX(NC_CLOBBER));
+   rb_define_const(cNetCDF, "NC_NOCLOBBER", INT2FIX(NC_NOCLOBBER));
+ 
++#ifdef NARRAY_BIGMEM
++  rb_define_const(cNetCDF, "SUPPORT_BIGMEM", Qtrue);
++#else
++  rb_define_const(cNetCDF, "SUPPORT_BIGMEM", Qfalse);
++#endif
++
++
+   /* Difinitions of the ruby methods */
+   /* The methods of the NetCDF class */
+   rb_define_singleton_method(cNetCDF,"nc_open",NetCDF_open,2);

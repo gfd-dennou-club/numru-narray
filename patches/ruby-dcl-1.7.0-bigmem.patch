@@ -1,0 +1,5790 @@
+diff -uNr ruby-dcl-1.7.0_org/dcl.h ruby-dcl-1.7.0/dcl.h
+--- ruby-dcl-1.7.0_org/dcl.h	1970-01-01 09:00:00.000000000 +0900
++++ ruby-dcl-1.7.0/dcl.h	2015-01-21 20:17:53.807837668 +0900
+@@ -0,0 +1,163 @@
++#include <math.h>
++#include "ruby.h"
++#include "libtinyf2c.h"
++#include "narray.h"  /* kuro: depend on numarray.so */
++
++#define DFLT_SIZE 32
++
++VALUE mDCL;
++
++/*  defines  */
++#define BE_INTEGER(x) ((integer)(NUM2INT(rb_Integer(x))))
++#define BE_REAL(x)    ((real)(RFLOAT_VALUE(rb_Float(x))))
++#define BE_LOGICAL(x) (((x == Qnil) || (x == Qfalse)) ? FALSE_ : TRUE_ )
++/* not implemented 
++#define BE_COMPLEX(x) ...
++*/
++
++
++
++/* for compatibility with ruby 1.6 */
++#ifndef RFLOAT_VALUE
++#define RFLOAT_VALUE(x) ((real)(RFLOAT(x)->value))
++#endif
++#ifndef RARRAY_PTR
++#define RARRAY_PTR(a) (RARRAY(a)->ptr)
++#endif
++#ifndef RARRAY_LEN
++#define RARRAY_LEN(a) (RARRAY(a)->len)
++#endif
++#ifndef StringValuePtr
++#define StringValuePtr(s) STR2CSTR(s)
++#endif
++
++/*  functions  */
++VALUE dcl_ccharary2obj(char *, int, int);
++VALUE dcl_cintegerary2obj(integer *, na_shape_t, int, na_shape_t *);
++VALUE dcl_crealary2obj(real *, na_shape_t, int, na_shape_t *);
++VALUE dcl_ccomplexary2obj(complex *, int, char *);
++VALUE dcl_clogicalary2obj(logical *, na_shape_t, int, na_shape_t *);
++
++
++
++/*  functions  */
++char    *dcl_obj2ccharary(VALUE, int, int);
++integer *dcl_obj2cintegerary(VALUE);
++real    *dcl_obj2crealary(VALUE);
++complex *dcl_obj2ccomplexary(VALUE);
++logical *dcl_obj2clogicalary(VALUE);
++
++void dcl_freeccharary(char *);
++void dcl_freecintegerary(integer *);
++void dcl_freecrealary(real *);
++void dcl_freeccomplexary(complex *);
++void dcl_freeclogicalary(logical *);
++
++
++/* for functions which return real */
++/* fnclib */
++extern real rd2r_(real *);
++extern real rr2d_(real *);
++extern real rexp_(real *, integer *, integer *);
++extern real rfpi_(void);
++extern real rmod_(real *, real *);
++/* gnmlib */
++extern real rgnlt_(real *);
++extern real rgnle_(real *);
++extern real rgngt_(real *);
++extern real rgnge_(real *);
++/* rfalib */
++extern real rmax_(real *, integer *, integer *);
++extern real rmin_(real *, integer *, integer *);
++extern real rsum_(real *, integer *, integer *);
++extern real rave_(real *, integer *, integer *);
++extern real rvar_(real *, integer *, integer *);
++extern real rstd_(real *, integer *, integer *);
++extern real rrms_(real *, integer *, integer *);
++extern real ramp_(real *, integer *, integer *);
++/* rfblib */
++extern real rprd_(real *, real *, integer *, integer *, integer *);
++extern real rcov_(real *, real *, integer *, integer *, integer *);
++extern real rcor_(real *, real *, integer *, integer *, integer *);
++
++
++extern int stftrf_(real*,real*,real*,real*);
++
++extern int stitrf_(real*,real*,real*,real*);
++
++extern int stfpr2_(real*,real*,real*,real*);
++
++extern int stipr2_(real*,real*,real*,real*);
++
++extern int mpfcyl_(real*,real*,real*,real*);
++
++extern int mpicyl_(real*,real*,real*,real*);
++
++extern int mpfmer_(real*,real*,real*,real*);
++
++extern int mpimer_(real*,real*,real*,real*);
++
++extern int mpfmwd_(real*,real*,real*,real*);
++
++extern int mpimwd_(real*,real*,real*,real*);
++
++extern int mpfmwl_(real*,real*,real*,real*);
++
++extern int mpimwl_(real*,real*,real*,real*);
++
++extern int mpfhmr_(real*,real*,real*,real*);
++
++extern int mpihmr_(real*,real*,real*,real*);
++
++extern int mpfek6_(real*,real*,real*,real*);
++
++extern int mpiek6_(real*,real*,real*,real*);
++
++extern int mpfktd_(real*,real*,real*,real*);
++
++extern int mpiktd_(real*,real*,real*,real*);
++
++extern int mpfcon_(real*,real*,real*,real*);
++
++extern int mpicon_(real*,real*,real*,real*);
++
++extern int mpfcoa_(real*,real*,real*,real*);
++
++extern int mpicoa_(real*,real*,real*,real*);
++
++extern int mpfcoc_(real*,real*,real*,real*);
++
++extern int mpicoc_(real*,real*,real*,real*);
++
++extern int mpfbon_(real*,real*,real*,real*);
++
++extern int mpibon_(real*,real*,real*,real*);
++
++extern int mpfotg_(real*,real*,real*,real*);
++
++extern int mpiotg_(real*,real*,real*,real*);
++
++extern int mpfpst_(real*,real*,real*,real*);
++
++extern int mpipst_(real*,real*,real*,real*);
++
++extern int mpfazm_(real*,real*,real*,real*);
++
++extern int mpiazm_(real*,real*,real*,real*);
++
++extern int mpfaza_(real*,real*,real*,real*);
++
++extern int mpiaza_(real*,real*,real*,real*);
++
++extern int ct2pc_(real*,real*,real*,real*);
++
++extern int ct2cp_(real*,real*,real*,real*);
++
++extern int ct2ec_(real*,real*,real*,real*);
++
++extern int ct2bc_(real*,real*,real*,real*);
++
++extern int ct2hc_(real*,real*,real*,real*);
++
++extern int ct2ch_(real*,real*,real*,real*);
++
+diff -uNr ruby-dcl-1.7.0_org/dcl_cary2obj.c ruby-dcl-1.7.0/dcl_cary2obj.c
+--- ruby-dcl-1.7.0_org/dcl_cary2obj.c	2011-02-23 16:21:26.000000000 +0900
++++ ruby-dcl-1.7.0/dcl_cary2obj.c	2015-01-21 20:11:07.670991827 +0900
+@@ -3,18 +3,7 @@
+  *   $Id: dcl_cary2obj.c,v 1.1.1.1 2011-02-23 07:21:26 horinout Exp $
+  */
+ 
+-#include <math.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"  /* kuro: depend on numarray.so */
+-
+-
+-/*  functions  */
+-VALUE dcl_ccharary2obj(char *, int, int);
+-VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-VALUE dcl_crealary2obj(real *, int, int, int *);
+-VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-VALUE dcl_clogicalary2obj(logical *, int, int, int *);
++#include "dcl.h"
+ 
+ static VALUE ccharary2ary(char *, int, int);
+ static VALUE cintegerary2ary(integer *, int);
+@@ -25,9 +14,9 @@
+ */
+ 
+ /* kuro: depend on numarray.so */
+-static VALUE crealary2na(real *, int, int, int *);
+-static VALUE clogicalary2na(logical *, int, int, int *);
+-static VALUE cintegerary2na(integer *, int, int, int *);
++static VALUE crealary2na(real *, na_shape_t, int, na_shape_t *);
++static VALUE clogicalary2na(logical *, na_shape_t, int, na_shape_t *);
++static VALUE cintegerary2na(integer *, na_shape_t, int, na_shape_t *);
+ /* not implemented
+ static VALUE ccomplexary2na(complex *, int, char *);
+ */
+@@ -57,9 +46,9 @@
+ VALUE
+ dcl_cintegerary2obj(cary, size, rank, shape)
+     integer *cary;
+-    int size;
++    na_shape_t size;
+     int rank;
+-    int *shape;
++    na_shape_t *shape;
+ {
+     VALUE obj;
+ 
+@@ -75,9 +64,9 @@
+ VALUE
+ dcl_crealary2obj(cary, size, rank, shape)
+     real *cary;
+-    int size;
++    na_shape_t size;
+     int rank;
+-    int *shape;
++    na_shape_t *shape;
+ {
+     VALUE obj;
+ 
+@@ -112,9 +101,9 @@
+ VALUE
+ dcl_clogicalary2obj(cary, size, rank, shape)
+     logical *cary;
+-    int size;
++    na_shape_t size;
+     int rank;
+-    int *shape;
++    na_shape_t *shape;
+ {
+     VALUE obj;
+ 
+@@ -271,13 +260,13 @@
+ static VALUE
+ crealary2na(cary, size, rank, shape)
+     real *cary;
+-    int size;
++    na_shape_t size;
+     int rank;
+-    int *shape;
++    na_shape_t *shape;
+ {
+     VALUE obj;
+     struct NARRAY *na;
+-    int i;
++    size_t i;
+     float *ptr;
+ 
+     if (cary == NULL)
+@@ -299,13 +288,13 @@
+ static VALUE
+ cintegerary2na(cary, size, rank, shape)
+     integer *cary;
+-    int size;
++    na_shape_t size;
+     int rank;
+-    int *shape;
++    na_shape_t *shape;
+ {
+     VALUE obj;
+     struct NARRAY *na;
+-    int i;
++    size_t i;
+     int32_t *ptr;
+ 
+     if (cary == NULL)
+@@ -327,13 +316,13 @@
+ static VALUE
+ clogicalary2na(cary, size, rank, shape)
+     logical *cary;
+-    int size;
++    na_shape_t size;
+     int rank;
+-    int *shape;
++    na_shape_t *shape;
+ {
+     VALUE obj;
+     struct NARRAY *na;
+-    int i;
++    size_t i;
+     u_int8_t *ptr;
+ 
+     if (cary == NULL)
+diff -uNr ruby-dcl-1.7.0_org/dcl_narrayed_funcs.c ruby-dcl-1.7.0/dcl_narrayed_funcs.c
+--- ruby-dcl-1.7.0_org/dcl_narrayed_funcs.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/dcl_narrayed_funcs.c	2015-01-21 20:25:51.094559957 +0900
+@@ -6,145 +6,9 @@
+  *   This file was automatically generated by GenWrapper/dcl_narray_funcs.rb 
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
++#include "dcl.h"
+ 
+-/* for compatibility with ruby 1.6 */
+-#ifndef RARRAY_LEN
+-#define RARRAY_LEN(a) (RARRAY(a)->len)
+-#endif
+ 
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern int stftrf_(real*,real*,real*,real*);
+-
+-extern int stitrf_(real*,real*,real*,real*);
+-
+-extern int stfpr2_(real*,real*,real*,real*);
+-
+-extern int stipr2_(real*,real*,real*,real*);
+-
+-extern int mpfcyl_(real*,real*,real*,real*);
+-
+-extern int mpicyl_(real*,real*,real*,real*);
+-
+-extern int mpfmer_(real*,real*,real*,real*);
+-
+-extern int mpimer_(real*,real*,real*,real*);
+-
+-extern int mpfmwd_(real*,real*,real*,real*);
+-
+-extern int mpimwd_(real*,real*,real*,real*);
+-
+-extern int mpfmwl_(real*,real*,real*,real*);
+-
+-extern int mpimwl_(real*,real*,real*,real*);
+-
+-extern int mpfhmr_(real*,real*,real*,real*);
+-
+-extern int mpihmr_(real*,real*,real*,real*);
+-
+-extern int mpfek6_(real*,real*,real*,real*);
+-
+-extern int mpiek6_(real*,real*,real*,real*);
+-
+-extern int mpfktd_(real*,real*,real*,real*);
+-
+-extern int mpiktd_(real*,real*,real*,real*);
+-
+-extern int mpfcon_(real*,real*,real*,real*);
+-
+-extern int mpicon_(real*,real*,real*,real*);
+-
+-extern int mpfcoa_(real*,real*,real*,real*);
+-
+-extern int mpicoa_(real*,real*,real*,real*);
+-
+-extern int mpfcoc_(real*,real*,real*,real*);
+-
+-extern int mpicoc_(real*,real*,real*,real*);
+-
+-extern int mpfbon_(real*,real*,real*,real*);
+-
+-extern int mpibon_(real*,real*,real*,real*);
+-
+-extern int mpfotg_(real*,real*,real*,real*);
+-
+-extern int mpiotg_(real*,real*,real*,real*);
+-
+-extern int mpfpst_(real*,real*,real*,real*);
+-
+-extern int mpipst_(real*,real*,real*,real*);
+-
+-extern int mpfazm_(real*,real*,real*,real*);
+-
+-extern int mpiazm_(real*,real*,real*,real*);
+-
+-extern int mpfaza_(real*,real*,real*,real*);
+-
+-extern int mpiaza_(real*,real*,real*,real*);
+-
+-extern int ct2pc_(real*,real*,real*,real*);
+-
+-extern int ct2cp_(real*,real*,real*,real*);
+-
+-extern int ct2ec_(real*,real*,real*,real*);
+-
+-extern int ct2bc_(real*,real*,real*,real*);
+-
+-extern int ct2hc_(real*,real*,real*,real*);
+-
+-extern int ct2ch_(real*,real*,real*,real*);
+-
+-
+-extern VALUE mDCL;
+ 
+ /* driver of real*2->real*2 functions such as STFTRF
+  */
+@@ -191,7 +55,7 @@
+     VALUE r, s;  // return value
+     real *i_p, *i_q;
+     real *i_r, *i_s;
+-    size_t len,j,lenq;
++    na_shape_t len,j,lenq;
+ 
+     i_p = dcl_obj2crealary(p);
+     i_q = dcl_obj2crealary(q);
+diff -uNr ruby-dcl-1.7.0_org/dcl_obj2cary.c ruby-dcl-1.7.0/dcl_obj2cary.c
+--- ruby-dcl-1.7.0_org/dcl_obj2cary.c	2011-02-23 16:21:26.000000000 +0900
++++ ruby-dcl-1.7.0/dcl_obj2cary.c	2015-01-21 20:24:57.188365317 +0900
+@@ -3,39 +3,7 @@
+  *   $Id: dcl_obj2cary.c,v 1.1.1.1 2011-02-23 07:21:26 horinout Exp $
+  */
+ 
+-#include <math.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef RFLOAT_VALUE
+-#define RFLOAT_VALUE(x) ((real)(RFLOAT(x)->value))
+-#endif
+-#ifndef RARRAY_PTR
+-#define RARRAY_PTR(a) (RARRAY(a)->ptr)
+-#endif
+-#ifndef RARRAY_LEN
+-#define RARRAY_LEN(a) (RARRAY(a)->len)
+-#endif
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-extern VALUE mDCL;
+-
+-/*  functions  */
+-char    *obj2ccharary(VALUE, int, int);
+-integer *obj2cintegerary(VALUE);
+-real    *obj2crealary(VALUE);
+-complex *obj2ccomplexary(VALUE);
+-logical *obj2clogicalary(VALUE);
+-
+-void dcl_freeccharary(char *);
+-void dcl_freecintegerary(integer *);
+-void dcl_freecrealary(real *);
+-void dcl_freeccomplexary(complex *);
+-void dcl_freeclogicalary(logical *);
++#include "dcl.h"
+ 
+ static char    *ary2ccharary(VALUE, int, int);
+ static integer *ary2cintegerary(VALUE);
+@@ -52,14 +20,6 @@
+ static complex *na2ccomplexary(VALUE);
+ */
+ 
+-/*  defines  */
+-#define BE_INTEGER(x) ((integer)(NUM2INT(rb_Integer(x))))
+-#define BE_REAL(x)    ((real)(RFLOAT_VALUE(rb_Float(x))))
+-#define BE_LOGICAL(x) (((x == Qnil) || (x == Qfalse)) ? FALSE_ : TRUE_ )
+-/* not implemented 
+-#define BE_COMPLEX(x) ...
+-*/
+-
+ 
+ /*
+  * dcl_obj2cxxxary() : convert ruby object to c xxx type array
+@@ -427,7 +387,7 @@
+     VALUE src;
+ {
+     VALUE chk;
+-    int len, i;
++    na_shape_t len, i;
+     real *rtn;
+     float *ptr;
+     struct NARRAY *na;
+@@ -455,7 +415,7 @@
+     VALUE src;
+ {
+     VALUE chk;
+-    int len, i;
++    na_shape_t len, i;
+     integer *rtn;
+     int32_t *ptr;
+     struct NARRAY *na;
+@@ -485,7 +445,7 @@
+ {
+     VALUE chk;
+     struct NARRAY *na;
+-    int len, i;
++    na_shape_t len, i;
+     logical *rtn;
+     unsigned char *ptr;
+ 
+diff -uNr ruby-dcl-1.7.0_org/dcl_rubydcloriginal.c ruby-dcl-1.7.0/dcl_rubydcloriginal.c
+--- ruby-dcl-1.7.0_org/dcl_rubydcloriginal.c	2012-03-08 16:36:24.000000000 +0900
++++ ruby-dcl-1.7.0/dcl_rubydcloriginal.c	2015-01-21 19:55:47.373784677 +0900
+@@ -2,59 +2,9 @@
+  Original methods of Ruby-DCL
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
++#include "dcl.h"
+ 
+-#define DFLT_SIZE 32
+ 
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
+ 
+ static VALUE
+ dcl_uemrkz(obj, n, upx, upy, z, itype, index, rsize)
+diff -uNr ruby-dcl-1.7.0_org/grph1_csgi.c ruby-dcl-1.7.0/grph1_csgi.c
+--- ruby-dcl-1.7.0_org/grph1_csgi.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph1_csgi.c	2015-01-21 19:55:47.374684677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_csgi(obj, ic)
+diff -uNr ruby-dcl-1.7.0_org/grph1_scpack.c ruby-dcl-1.7.0/grph1_scpack.c
+--- ruby-dcl-1.7.0_org/grph1_scpack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph1_scpack.c	2015-01-21 19:55:47.375584677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_scsobj(obj, xobj3, yobj3, zobj3)
+diff -uNr ruby-dcl-1.7.0_org/grph1_sgpack.c ruby-dcl-1.7.0/grph1_sgpack.c
+--- ruby-dcl-1.7.0_org/grph1_sgpack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph1_sgpack.c	2015-01-21 19:55:47.375584677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_sgopn(obj, iws)
+diff -uNr ruby-dcl-1.7.0_org/grph1_slpack.c ruby-dcl-1.7.0/grph1_slpack.c
+--- ruby-dcl-1.7.0_org/grph1_slpack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph1_slpack.c	2015-01-21 19:55:47.376484677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_slinit(obj, wxmax, wymax, fact)
+diff -uNr ruby-dcl-1.7.0_org/grph1_stpack.c ruby-dcl-1.7.0/grph1_stpack.c
+--- ruby-dcl-1.7.0_org/grph1_stpack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph1_stpack.c	2015-01-21 19:55:47.376484677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_stqtrf(obj)
+diff -uNr ruby-dcl-1.7.0_org/grph1_swpack.c ruby-dcl-1.7.0/grph1_swpack.c
+--- ruby-dcl-1.7.0_org/grph1_swpack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph1_swpack.c	2015-01-21 19:55:47.376484677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_swdopn(obj)
+diff -uNr ruby-dcl-1.7.0_org/grph2_grpack.c ruby-dcl-1.7.0/grph2_grpack.c
+--- ruby-dcl-1.7.0_org/grph2_grpack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_grpack.c	2015-01-21 19:55:47.377384677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_gropn(obj, iws)
+diff -uNr ruby-dcl-1.7.0_org/grph2_ucpack.c ruby-dcl-1.7.0/grph2_ucpack.c
+--- ruby-dcl-1.7.0_org/grph2_ucpack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_ucpack.c	2015-01-21 19:55:47.377384677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_ucpqnp(obj)
+diff -uNr ruby-dcl-1.7.0_org/grph2_udpack.c ruby-dcl-1.7.0/grph2_udpack.c
+--- ruby-dcl-1.7.0_org/grph2_udpack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_udpack.c	2015-01-21 20:15:49.833052652 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_udcntr(obj, z, mx, nx, ny)
+@@ -386,7 +329,7 @@
+ 
+     udiclr_(o_ix, &i_n);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      ix = dcl_cintegerary2obj(o_ix, (i_n), 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/grph2_uepack.c ruby-dcl-1.7.0/grph2_uepack.c
+--- ruby-dcl-1.7.0_org/grph2_uepack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uepack.c	2015-01-21 19:55:47.378284677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_uetone(obj, z, mx, nx, ny)
+diff -uNr ruby-dcl-1.7.0_org/grph2_ugpack.c ruby-dcl-1.7.0/grph2_ugpack.c
+--- ruby-dcl-1.7.0_org/grph2_ugpack.c	2012-04-25 11:51:53.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_ugpack.c	2015-01-21 19:55:47.378284677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_ugvect(obj, u, mu, v, mv, nx, ny)
+diff -uNr ruby-dcl-1.7.0_org/grph2_uhpack.c ruby-dcl-1.7.0/grph2_uhpack.c
+--- ruby-dcl-1.7.0_org/grph2_uhpack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uhpack.c	2015-01-21 19:55:47.378284677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_uherb(obj, n, upx1, upx2, upy)
+diff -uNr ruby-dcl-1.7.0_org/grph2_uipack.c ruby-dcl-1.7.0/grph2_uipack.c
+--- ruby-dcl-1.7.0_org/grph2_uipack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uipack.c	2015-01-21 19:55:47.379184677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ #if DCLVER >= 544
+ 
+diff -uNr ruby-dcl-1.7.0_org/grph2_ulpack.c ruby-dcl-1.7.0/grph2_ulpack.c
+--- ruby-dcl-1.7.0_org/grph2_ulpack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_ulpack.c	2015-01-21 20:14:37.297098472 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_ulxlog(obj, cside, nlbl, nticks)
+@@ -139,7 +82,7 @@
+ 
+     ulxlbl_(o_bl, &o_nbl, &i_inum);
+ 
+-    {int array_shape[1] = {o_nbl};
++    {na_shape_t array_shape[1] = {o_nbl};
+      bl = dcl_crealary2obj(o_bl, (o_nbl), 1, array_shape);
+     }
+     nbl = INT2NUM(o_nbl);
+@@ -192,7 +135,7 @@
+ 
+     ulqxbl_(o_bl, &o_nbl);
+ 
+-    {int array_shape[1] = {o_nbl};
++    {na_shape_t array_shape[1] = {o_nbl};
+      bl = dcl_crealary2obj(o_bl, (o_nbl), 1, array_shape);
+     }
+     nbl = INT2NUM(o_nbl);
+@@ -222,7 +165,7 @@
+ 
+     ulylbl_(o_bl, &o_nbl, &i_inum);
+ 
+-    {int array_shape[1] = {o_nbl};
++    {na_shape_t array_shape[1] = {o_nbl};
+      bl = dcl_crealary2obj(o_bl, (o_nbl), 1, array_shape);
+     }
+     nbl = INT2NUM(o_nbl);
+@@ -275,7 +218,7 @@
+ 
+     ulqybl_(o_bl, &o_nbl);
+ 
+-    {int array_shape[1] = {o_nbl};
++    {na_shape_t array_shape[1] = {o_nbl};
+      bl = dcl_crealary2obj(o_bl, (o_nbl), 1, array_shape);
+     }
+     nbl = INT2NUM(o_nbl);
+diff -uNr ruby-dcl-1.7.0_org/grph2_umpack.c ruby-dcl-1.7.0/grph2_umpack.c
+--- ruby-dcl-1.7.0_org/grph2_umpack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_umpack.c	2015-01-21 19:55:47.380084677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_umpmap(obj, cdsn)
+diff -uNr ruby-dcl-1.7.0_org/grph2_uspack.c ruby-dcl-1.7.0/grph2_uspack.c
+--- ruby-dcl-1.7.0_org/grph2_uspack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uspack.c	2015-01-21 20:14:21.371945834 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_usgrph(obj, n, x, y)
+@@ -1123,10 +1066,10 @@
+ 
+     uswapz_(io_x1, io_x2, &i_n);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      x1 = dcl_crealary2obj(io_x1, (i_n), 1, array_shape);
+     }
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      x2 = dcl_crealary2obj(io_x2, (i_n), 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/grph2_uupack.c ruby-dcl-1.7.0/grph2_uupack.c
+--- ruby-dcl-1.7.0_org/grph2_uupack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uupack.c	2015-01-21 19:55:47.381884677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_uulin(obj, n, upx, upy)
+diff -uNr ruby-dcl-1.7.0_org/grph2_uvpack.c ruby-dcl-1.7.0/grph2_uvpack.c
+--- ruby-dcl-1.7.0_org/grph2_uvpack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uvpack.c	2015-01-21 19:55:47.381884677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_uverb(obj, n, upx, upy1, upy2)
+diff -uNr ruby-dcl-1.7.0_org/grph2_uwpack.c ruby-dcl-1.7.0/grph2_uwpack.c
+--- ruby-dcl-1.7.0_org/grph2_uwpack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uwpack.c	2015-01-21 20:12:27.783491391 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_uwsgxa(obj, xp, nx)
+@@ -104,7 +47,7 @@
+ 
+     uwqgxa_(o_xp, &o_nx);
+ 
+-    {int array_shape[1] = {o_nx};
++    {na_shape_t array_shape[1] = {o_nx};
+      xp = dcl_crealary2obj(o_xp, (o_nx), 1, array_shape);
+     }
+     nx = INT2NUM(o_nx);
+@@ -239,7 +182,7 @@
+ 
+     uwqgya_(o_yp, &o_ny);
+ 
+-    {int array_shape[1] = {o_ny};
++    {na_shape_t array_shape[1] = {o_ny};
+      yp = dcl_crealary2obj(o_yp, (o_ny), 1, array_shape);
+     }
+     ny = INT2NUM(o_ny);
+diff -uNr ruby-dcl-1.7.0_org/grph2_uxpack.c ruby-dcl-1.7.0/grph2_uxpack.c
+--- ruby-dcl-1.7.0_org/grph2_uxpack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uxpack.c	2015-01-21 19:55:47.382784677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_uxsaxz(obj, cside, roffx)
+diff -uNr ruby-dcl-1.7.0_org/grph2_uypack.c ruby-dcl-1.7.0/grph2_uypack.c
+--- ruby-dcl-1.7.0_org/grph2_uypack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uypack.c	2015-01-21 19:55:47.382784677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_uysaxz(obj, cside, roffy)
+diff -uNr ruby-dcl-1.7.0_org/grph2_uzpack.c ruby-dcl-1.7.0/grph2_uzpack.c
+--- ruby-dcl-1.7.0_org/grph2_uzpack.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/grph2_uzpack.c	2015-01-21 19:55:47.382784677 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_uzpqnp(obj)
+diff -uNr ruby-dcl-1.7.0_org/init.c.default ruby-dcl-1.7.0/init.c.default
+--- ruby-dcl-1.7.0_org/init.c.default	2012-03-08 16:36:24.000000000 +0900
++++ ruby-dcl-1.7.0/init.c.default	2015-01-21 19:59:33.670911248 +0900
+@@ -1,6 +1,7 @@
+ #include <stdio.h>
+ #include "ruby.h"
+ #include "libtinyf2c.h"
++#include "narray.h"
+ 
+ /* for compatibility with ruby 1.6 */
+ #ifndef RARRAY_PTR
+@@ -89,7 +90,7 @@
+     msg[lsub+2]=' ';
+     strncpy(msg+lsub+3,cmsg,lmsg);
+     for(i=lsub+3+lmsg;i<300;i++){msg[i]='\0';}
+-    rb_raise(rb_eRuntimeError, msg);
++    rb_raise(rb_eRuntimeError, "%s", msg);
+     return(0);
+ }
+ 
+@@ -124,6 +125,12 @@
+     mDCL = rb_define_module_under(mNumRu, "DCL");
+     rb_define_const(mDCL, "DCLVERSION", rb_str_new2(DCLVersion));
+ 
++#ifdef NARRAY_BIGMEM
++    rb_define_const(mDCL, "SUPPORT_BIGMEM", Qtrue);
++#else
++    rb_define_const(mDCL, "SUPPORT_BIGMEM", Qfalse);
++#endif
++
+     init_grph1_csgi(mDCL);
+     init_grph1_scpack(mDCL);
+     init_grph1_sgpack(mDCL);
+diff -uNr ruby-dcl-1.7.0_org/lib/dcl.rb ruby-dcl-1.7.0/lib/dcl.rb
+--- ruby-dcl-1.7.0_org/lib/dcl.rb	2012-04-25 11:51:56.000000000 +0900
++++ ruby-dcl-1.7.0/lib/dcl.rb	2015-01-21 20:01:08.119183577 +0900
+@@ -1,6 +1,24 @@
+ require "narray"
+ require "numru/dcl_raw"
+ 
++if NArray.constants.map{|s| s.to_sym}.include?(:SUPPORT_BIGMEM) && NArray::SUPPORT_BIGMEM
++  unless NumRu::DCL::SUPPORT_BIGMEM
++    $stderr.print <<EOM
++Ruby-DCL was compiled with NArray without big memory patch.
++However loaded NArray is big memory support version.
++EOM
++    raise "check and use consistent version"
++  end
++else
++  if NumRu::DCL::SUPPORT_BIGMEM
++    $stderr.print <<EOM
++Ruby-DCL was compiled with NArray with big memory patch.
++However loaded NArray is not big memory support version.
++EOM
++    raise "check and use consistent version"
++  end
++end
++
+ module NumRu
+     module DCL
+       init_arg($0,ARGV) if DCLVERSION >= "5.3.2"
+diff -uNr ruby-dcl-1.7.0_org/math1_blklib.c ruby-dcl-1.7.0/math1_blklib.c
+--- ruby-dcl-1.7.0_org/math1_blklib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_blklib.c	2015-01-21 19:55:47.384584678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_iblklt(obj, rx, n, rr)
+diff -uNr ruby-dcl-1.7.0_org/math1_chrlib.c ruby-dcl-1.7.0/math1_chrlib.c
+--- ruby-dcl-1.7.0_org/math1_chrlib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_chrlib.c	2015-01-21 19:55:47.384584678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_cladj(obj, chr)
+diff -uNr ruby-dcl-1.7.0_org/math1_clsplib.c ruby-dcl-1.7.0/math1_clsplib.c
+--- ruby-dcl-1.7.0_org/math1_clsplib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_clsplib.c	2015-01-21 20:16:17.439013117 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ #if DCLVER >= 544
+ 
+@@ -119,13 +62,13 @@
+ 
+     clrgsv_(i_r, i_g, i_b, o_h, o_s, o_v, &i_n, &i_m);
+ 
+-    {int array_shape[2] = {i_n, i_m};
++    {na_shape_t array_shape[2] = {i_n, i_m};
+      h = dcl_crealary2obj(o_h, (i_n*i_m), 2, array_shape);
+     }
+-    {int array_shape[2] = {i_n, i_m};
++    {na_shape_t array_shape[2] = {i_n, i_m};
+      s = dcl_crealary2obj(o_s, (i_n*i_m), 2, array_shape);
+     }
+-    {int array_shape[2] = {i_n, i_m};
++    {na_shape_t array_shape[2] = {i_n, i_m};
+      v = dcl_crealary2obj(o_v, (i_n*i_m), 2, array_shape);
+     }
+ 
+@@ -193,13 +136,13 @@
+ 
+     clsvrg_(i_h, i_s, i_v, o_r, o_g, o_b, &i_n, &i_m);
+ 
+-    {int array_shape[2] = {i_n, i_m};
++    {na_shape_t array_shape[2] = {i_n, i_m};
+      r = dcl_cintegerary2obj(o_r, (i_n*i_m), 2, array_shape);
+     }
+-    {int array_shape[2] = {i_n, i_m};
++    {na_shape_t array_shape[2] = {i_n, i_m};
+      g = dcl_cintegerary2obj(o_g, (i_n*i_m), 2, array_shape);
+     }
+-    {int array_shape[2] = {i_n, i_m};
++    {na_shape_t array_shape[2] = {i_n, i_m};
+      b = dcl_cintegerary2obj(o_b, (i_n*i_m), 2, array_shape);
+     }
+ 
+@@ -253,7 +196,7 @@
+ 
+     inorml_(i_v, o_w, &i_n, &i_m, &i_x, &i_y);
+ 
+-    {int array_shape[2] = {i_n, i_m};
++    {na_shape_t array_shape[2] = {i_n, i_m};
+      w = dcl_crealary2obj(o_w, (i_n*i_m), 2, array_shape);
+     }
+ 
+@@ -305,7 +248,7 @@
+ 
+     rnorml_(i_v, o_w, &i_n, &i_m, &i_x, &i_y);
+ 
+-    {int array_shape[2] = {i_n, i_m};
++    {na_shape_t array_shape[2] = {i_n, i_m};
+      w = dcl_crealary2obj(o_w, (i_n*i_m), 2, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math1_fnclib.c ruby-dcl-1.7.0/math1_fnclib.c
+--- ruby-dcl-1.7.0_org/math1_fnclib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_fnclib.c	2015-01-21 19:55:47.384584678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_igus(obj, rx)
+diff -uNr ruby-dcl-1.7.0_org/math1_gnmlib.c ruby-dcl-1.7.0/math1_gnmlib.c
+--- ruby-dcl-1.7.0_org/math1_gnmlib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_gnmlib.c	2015-01-21 20:20:03.073546430 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_gnsave(obj)
+@@ -124,7 +67,7 @@
+ 
+     gnqblk_(o_xb, &o_nb);
+ 
+-    {int array_shape[1] = {o_nb};
++    {na_shape_t array_shape[1] = {o_nb};
+      xb = dcl_crealary2obj(o_xb, (o_nb), 1, array_shape);
+     }
+     nb = INT2NUM(o_nb);
+diff -uNr ruby-dcl-1.7.0_org/math1_gt2dlib.c ruby-dcl-1.7.0/math1_gt2dlib.c
+--- ruby-dcl-1.7.0_org/math1_gt2dlib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_gt2dlib.c	2015-01-21 19:55:47.386384678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ #if DCLVER >= 530
+ 
+diff -uNr ruby-dcl-1.7.0_org/math1_ifalib.c ruby-dcl-1.7.0/math1_ifalib.c
+--- ruby-dcl-1.7.0_org/math1_ifalib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_ifalib.c	2015-01-21 19:55:47.386384678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_imax(obj, ix, n, jx)
+diff -uNr ruby-dcl-1.7.0_org/math1_indxlib.c ruby-dcl-1.7.0/math1_indxlib.c
+--- ruby-dcl-1.7.0_org/math1_indxlib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_indxlib.c	2015-01-21 19:55:47.387284678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_indxcf(obj, cx, n, jd, ch)
+diff -uNr ruby-dcl-1.7.0_org/math1_intlib.c ruby-dcl-1.7.0/math1_intlib.c
+--- ruby-dcl-1.7.0_org/math1_intlib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_intlib.c	2015-01-21 19:55:47.387284678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_irlt(obj, rx)
+diff -uNr ruby-dcl-1.7.0_org/math1_lrllib.c ruby-dcl-1.7.0/math1_lrllib.c
+--- ruby-dcl-1.7.0_org/math1_lrllib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_lrllib.c	2015-01-21 19:55:47.387284678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_lreq(obj, x, y)
+diff -uNr ruby-dcl-1.7.0_org/math1_maplib.c ruby-dcl-1.7.0/math1_maplib.c
+--- ruby-dcl-1.7.0_org/math1_maplib.c	2012-04-25 11:51:54.000000000 +0900
++++ ruby-dcl-1.7.0/math1_maplib.c	2015-01-21 19:55:47.389084678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_mpscon(obj, ylat0)
+diff -uNr ruby-dcl-1.7.0_org/math1_oslib.c ruby-dcl-1.7.0/math1_oslib.c
+--- ruby-dcl-1.7.0_org/math1_oslib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_oslib.c	2015-01-21 19:55:47.390884678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_osqarn(obj)
+diff -uNr ruby-dcl-1.7.0_org/math1_rfalib.c ruby-dcl-1.7.0/math1_rfalib.c
+--- ruby-dcl-1.7.0_org/math1_rfalib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_rfalib.c	2015-01-21 19:55:47.390884678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_rmax(obj, rx, n, jx)
+diff -uNr ruby-dcl-1.7.0_org/math1_rfblib.c ruby-dcl-1.7.0/math1_rfblib.c
+--- ruby-dcl-1.7.0_org/math1_rfblib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_rfblib.c	2015-01-21 19:55:47.391784678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_rprd(obj, rx, ry, n, jx, jy)
+diff -uNr ruby-dcl-1.7.0_org/math1_sublib.c ruby-dcl-1.7.0/math1_sublib.c
+--- ruby-dcl-1.7.0_org/math1_sublib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_sublib.c	2015-01-21 20:14:09.653947274 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_vignn(obj, n, jx)
+@@ -84,7 +27,7 @@
+ 
+     vignn_(o_ix, &i_n, &i_jx);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(o_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -116,7 +59,7 @@
+ 
+     vrgnn_(o_rx, &i_n, &i_jx);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(o_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -201,7 +144,7 @@
+ 
+     dxiloc_(&i_nd, i_ns, o_np, &i_ncp);
+ 
+-    {int array_shape[1] = {i_nd};
++    {na_shape_t array_shape[1] = {i_nd};
+      np = dcl_cintegerary2obj(o_np, (i_nd), 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math1_syslib.c ruby-dcl-1.7.0/math1_syslib.c
+--- ruby-dcl-1.7.0_org/math1_syslib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_syslib.c	2015-01-21 20:16:04.830014666 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_lchreq(obj, ch1, ch2)
+@@ -1139,7 +1082,7 @@
+ 
+     rtiget_(i_cpfix, i_cps, o_ipara, &i_max, (ftnlen)strlen(i_cpfix), (ftnlen)8);
+ 
+-    {int array_shape[1] = {i_max};
++    {na_shape_t array_shape[1] = {i_max};
+      ipara = dcl_cintegerary2obj(o_ipara, (i_max), 1, array_shape);
+     }
+ 
+@@ -1180,7 +1123,7 @@
+ 
+     rtlget_(i_cpfix, i_cps, o_lpara, &i_max, (ftnlen)strlen(i_cpfix), (ftnlen)8);
+ 
+-    {int array_shape[1] = {i_max};
++    {na_shape_t array_shape[1] = {i_max};
+      lpara = dcl_clogicalary2obj(o_lpara, (i_max), 1, array_shape);
+     }
+ 
+@@ -1221,7 +1164,7 @@
+ 
+     rtrget_(i_cpfix, i_cps, o_rpara, &i_max, (ftnlen)strlen(i_cpfix), (ftnlen)8);
+ 
+-    {int array_shape[1] = {i_max};
++    {na_shape_t array_shape[1] = {i_max};
+      rpara = dcl_crealary2obj(o_rpara, (i_max), 1, array_shape);
+     }
+ 
+@@ -1297,7 +1240,7 @@
+ 
+     rliget_(i_cpl, o_ipara, &i_max, (ftnlen)40);
+ 
+-    {int array_shape[1] = {i_max};
++    {na_shape_t array_shape[1] = {i_max};
+      ipara = dcl_cintegerary2obj(o_ipara, (i_max), 1, array_shape);
+     }
+ 
+@@ -1333,7 +1276,7 @@
+ 
+     rllget_(i_cpl, o_lpara, &i_max, (ftnlen)40);
+ 
+-    {int array_shape[1] = {i_max};
++    {na_shape_t array_shape[1] = {i_max};
+      lpara = dcl_clogicalary2obj(o_lpara, (i_max), 1, array_shape);
+     }
+ 
+@@ -1369,7 +1312,7 @@
+ 
+     rlrget_(i_cpl, o_rpara, &i_max, (ftnlen)40);
+ 
+-    {int array_shape[1] = {i_max};
++    {na_shape_t array_shape[1] = {i_max};
+      rpara = dcl_crealary2obj(o_rpara, (i_max), 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math1_vialib.c ruby-dcl-1.7.0/math1_vialib.c
+--- ruby-dcl-1.7.0_org/math1_vialib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_vialib.c	2015-01-21 20:13:55.831948973 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_vifna(obj, ix, n, jx, jy, ifna)
+@@ -103,7 +46,7 @@
+ 
+     vifna_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ifna);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -155,7 +98,7 @@
+ 
+     vifna0_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ifna);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -207,7 +150,7 @@
+ 
+     vifna1_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ifna);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -259,7 +202,7 @@
+ 
+     viinc_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ii);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -311,7 +254,7 @@
+ 
+     viinc0_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ii);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -363,7 +306,7 @@
+ 
+     viinc1_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ii);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -415,7 +358,7 @@
+ 
+     vifct_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ii);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -467,7 +410,7 @@
+ 
+     vifct0_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ii);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -519,7 +462,7 @@
+ 
+     vifct1_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ii);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -571,7 +514,7 @@
+ 
+     vicon_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ii);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -623,7 +566,7 @@
+ 
+     vicon0_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ii);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -675,7 +618,7 @@
+ 
+     vicon1_(i_ix, o_iy, &i_n, &i_jx, &i_jy, &i_ii);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -722,7 +665,7 @@
+ 
+     viset_(i_ix, o_iy, &i_n, &i_jx, &i_jy);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      iy = dcl_cintegerary2obj(o_iy, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -766,7 +709,7 @@
+ 
+     iadd_(io_ix, &i_n, &i_jx, &i_ii);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(io_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -810,7 +753,7 @@
+ 
+     iadd0_(io_ix, &i_n, &i_jx, &i_ii);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(io_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -854,7 +797,7 @@
+ 
+     iadd1_(io_ix, &i_n, &i_jx, &i_ii);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(io_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -898,7 +841,7 @@
+ 
+     imlt_(io_ix, &i_n, &i_jx, &i_ii);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(io_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -942,7 +885,7 @@
+ 
+     imlt0_(io_ix, &i_n, &i_jx, &i_ii);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(io_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -986,7 +929,7 @@
+ 
+     imlt1_(io_ix, &i_n, &i_jx, &i_ii);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(io_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -1030,7 +973,7 @@
+ 
+     iset_(io_ix, &i_n, &i_jx, &i_ii);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(io_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -1074,7 +1017,7 @@
+ 
+     iset0_(io_ix, &i_n, &i_jx, &i_ii);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(io_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -1118,7 +1061,7 @@
+ 
+     iset1_(io_ix, &i_n, &i_jx, &i_ii);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ix = dcl_cintegerary2obj(io_ix, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math1_viblib.c ruby-dcl-1.7.0/math1_viblib.c
+--- ruby-dcl-1.7.0_org/math1_viblib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_viblib.c	2015-01-21 20:13:15.397991026 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_vifnb(obj, ix, iy, n, jx, jy, jz, ifnb)
+@@ -117,7 +60,7 @@
+ 
+     vifnb_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz, &i_ifnb);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -184,7 +127,7 @@
+ 
+     vifnb0_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz, &i_ifnb);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -251,7 +194,7 @@
+ 
+     vifnb1_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz, &i_ifnb);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -313,7 +256,7 @@
+ 
+     viadd_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -375,7 +318,7 @@
+ 
+     viadd0_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -437,7 +380,7 @@
+ 
+     viadd1_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -499,7 +442,7 @@
+ 
+     visub_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -561,7 +504,7 @@
+ 
+     visub0_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -623,7 +566,7 @@
+ 
+     visub1_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -685,7 +628,7 @@
+ 
+     vimlt_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -747,7 +690,7 @@
+ 
+     vimlt0_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -809,7 +752,7 @@
+ 
+     vimlt1_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -871,7 +814,7 @@
+ 
+     vidiv_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -933,7 +876,7 @@
+ 
+     vidiv0_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -995,7 +938,7 @@
+ 
+     vidiv1_(i_ix, i_iy, o_iz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      iz = dcl_cintegerary2obj(o_iz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math1_vralib.c ruby-dcl-1.7.0/math1_vralib.c
+--- ruby-dcl-1.7.0_org/math1_vralib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_vralib.c	2015-01-21 20:15:06.255003667 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_vrfna(obj, rx, n, jx, jy, rfna)
+@@ -103,7 +46,7 @@
+ 
+     vrfna_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rfna);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -155,7 +98,7 @@
+ 
+     vrfna0_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rfna);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -207,7 +150,7 @@
+ 
+     vrfna1_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rfna);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -259,7 +202,7 @@
+ 
+     vrinc_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rr);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -311,7 +254,7 @@
+ 
+     vrinc0_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rr);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -363,7 +306,7 @@
+ 
+     vrinc1_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rr);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -415,7 +358,7 @@
+ 
+     vrfct_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rr);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -467,7 +410,7 @@
+ 
+     vrfct0_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rr);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -519,7 +462,7 @@
+ 
+     vrfct1_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rr);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -571,7 +514,7 @@
+ 
+     vrcon_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rr);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -623,7 +566,7 @@
+ 
+     vrcon0_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rr);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -675,7 +618,7 @@
+ 
+     vrcon1_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_rr);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -722,7 +665,7 @@
+ 
+     vrset_(i_rx, o_ry, &i_n, &i_jx, &i_jy);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -766,7 +709,7 @@
+ 
+     radd_(io_rx, &i_n, &i_jx, &i_rr);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -810,7 +753,7 @@
+ 
+     radd0_(io_rx, &i_n, &i_jx, &i_rr);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -854,7 +797,7 @@
+ 
+     radd1_(io_rx, &i_n, &i_jx, &i_rr);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -898,7 +841,7 @@
+ 
+     rmlt_(io_rx, &i_n, &i_jx, &i_rr);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -942,7 +885,7 @@
+ 
+     rmlt0_(io_rx, &i_n, &i_jx, &i_rr);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -986,7 +929,7 @@
+ 
+     rmlt1_(io_rx, &i_n, &i_jx, &i_rr);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -1030,7 +973,7 @@
+ 
+     rset_(io_rx, &i_n, &i_jx, &i_rr);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -1074,7 +1017,7 @@
+ 
+     rset0_(io_rx, &i_n, &i_jx, &i_rr);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -1118,7 +1061,7 @@
+ 
+     rset1_(io_rx, &i_n, &i_jx, &i_rr);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math1_vrblib.c ruby-dcl-1.7.0/math1_vrblib.c
+--- ruby-dcl-1.7.0_org/math1_vrblib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_vrblib.c	2015-01-21 20:15:38.296852087 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_vrfnb(obj, rx, ry, n, jx, jy, jz, rfnb)
+@@ -117,7 +60,7 @@
+ 
+     vrfnb_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz, &i_rfnb);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -184,7 +127,7 @@
+ 
+     vrfnb0_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz, &i_rfnb);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -251,7 +194,7 @@
+ 
+     vrfnb1_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz, &i_rfnb);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -313,7 +256,7 @@
+ 
+     vradd_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -375,7 +318,7 @@
+ 
+     vradd0_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -437,7 +380,7 @@
+ 
+     vradd1_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -499,7 +442,7 @@
+ 
+     vrsub_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -561,7 +504,7 @@
+ 
+     vrsub0_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -623,7 +566,7 @@
+ 
+     vrsub1_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -685,7 +628,7 @@
+ 
+     vrmlt_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -747,7 +690,7 @@
+ 
+     vrmlt0_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -809,7 +752,7 @@
+ 
+     vrmlt1_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -871,7 +814,7 @@
+ 
+     vrdiv_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -933,7 +876,7 @@
+ 
+     vrdiv0_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -995,7 +938,7 @@
+ 
+     vrdiv1_(i_rx, i_ry, o_rz, &i_n, &i_jx, &i_jy, &i_jz);
+ 
+-    {int array_shape[1] = {i_jz*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jz*(i_n-1)+1};
+      rz = dcl_crealary2obj(o_rz, i_jz*(i_n-1)+1, 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math1_xfclib.c ruby-dcl-1.7.0/math1_xfclib.c
+--- ruby-dcl-1.7.0_org/math1_xfclib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math1_xfclib.c	2015-01-21 19:55:47.395384678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_ifromc(obj, cx)
+diff -uNr ruby-dcl-1.7.0_org/math2_fftlib.c ruby-dcl-1.7.0/math2_fftlib.c
+--- ruby-dcl-1.7.0_org/math2_fftlib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math2_fftlib.c	2015-01-21 20:13:35.107421311 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_cfftb(obj, n, c, wsave)
+@@ -94,7 +37,7 @@
+ 
+     cfftb_(&i_n, io_c, i_wsave);
+ 
+-    {int array_shape[1] = {2*i_n};
++    {na_shape_t array_shape[1] = {2*i_n};
+      c = dcl_crealary2obj(io_c, (2*i_n), 1, array_shape);
+     }
+ 
+@@ -138,7 +81,7 @@
+ 
+     cfftf_(&i_n, io_c, i_wsave);
+ 
+-    {int array_shape[1] = {2*i_n};
++    {na_shape_t array_shape[1] = {2*i_n};
+      c = dcl_crealary2obj(io_c, (2*i_n), 1, array_shape);
+     }
+ 
+@@ -167,7 +110,7 @@
+ 
+     cffti_(&i_n, o_wsave);
+ 
+-    {int array_shape[1] = {4*i_n+15};
++    {na_shape_t array_shape[1] = {4*i_n+15};
+      wsave = dcl_crealary2obj(o_wsave, (4*i_n+15), 1, array_shape);
+     }
+ 
+@@ -209,7 +152,7 @@
+ 
+     cosqb_(&i_n, io_x, i_wsave);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      x = dcl_crealary2obj(io_x, (i_n), 1, array_shape);
+     }
+ 
+@@ -253,7 +196,7 @@
+ 
+     cosqf_(&i_n, io_x, i_wsave);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      x = dcl_crealary2obj(io_x, (i_n), 1, array_shape);
+     }
+ 
+@@ -282,7 +225,7 @@
+ 
+     cosqi_(&i_n, o_wsave);
+ 
+-    {int array_shape[1] = {3*i_n+15};
++    {na_shape_t array_shape[1] = {3*i_n+15};
+      wsave = dcl_crealary2obj(o_wsave, (3*i_n+15), 1, array_shape);
+     }
+ 
+@@ -324,7 +267,7 @@
+ 
+     cost_(&i_n, io_x, i_wsave);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      x = dcl_crealary2obj(io_x, (i_n), 1, array_shape);
+     }
+ 
+@@ -353,7 +296,7 @@
+ 
+     costi_(&i_n, o_wsave);
+ 
+-    {int array_shape[1] = {3*i_n+15};
++    {na_shape_t array_shape[1] = {3*i_n+15};
+      wsave = dcl_crealary2obj(o_wsave, (3*i_n+15), 1, array_shape);
+     }
+ 
+@@ -412,7 +355,7 @@
+ 
+     ezfftb_(&i_n, o_r, &i_azero, i_a, i_b, i_wsave);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      r = dcl_crealary2obj(o_r, (i_n), 1, array_shape);
+     }
+ 
+@@ -466,10 +409,10 @@
+     ezfftf_(&i_n, i_r, &o_azero, o_a, o_b, i_wsave);
+ 
+     azero = rb_float_new((double)o_azero);
+-    {int array_shape[1] = {i_n/2};
++    {na_shape_t array_shape[1] = {i_n/2};
+      a = dcl_crealary2obj(o_a, (i_n/2), 1, array_shape);
+     }
+-    {int array_shape[1] = {i_n/2};
++    {na_shape_t array_shape[1] = {i_n/2};
+      b = dcl_crealary2obj(o_b, (i_n/2), 1, array_shape);
+     }
+ 
+@@ -498,7 +441,7 @@
+ 
+     ezffti_(&i_n, o_wsave);
+ 
+-    {int array_shape[1] = {3*i_n+15};
++    {na_shape_t array_shape[1] = {3*i_n+15};
+      wsave = dcl_crealary2obj(o_wsave, (3*i_n+15), 1, array_shape);
+     }
+ 
+@@ -540,7 +483,7 @@
+ 
+     rfftb_(&i_n, io_r, i_wsave);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      r = dcl_crealary2obj(io_r, (i_n), 1, array_shape);
+     }
+ 
+@@ -584,7 +527,7 @@
+ 
+     rfftf_(&i_n, io_r, i_wsave);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      r = dcl_crealary2obj(io_r, (i_n), 1, array_shape);
+     }
+ 
+@@ -613,7 +556,7 @@
+ 
+     rffti_(&i_n, o_wsave);
+ 
+-    {int array_shape[1] = {2*i_n+15};
++    {na_shape_t array_shape[1] = {2*i_n+15};
+      wsave = dcl_crealary2obj(o_wsave, (2*i_n+15), 1, array_shape);
+     }
+ 
+@@ -655,7 +598,7 @@
+ 
+     sinqb_(&i_n, io_x, i_wsave);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      x = dcl_crealary2obj(io_x, (i_n), 1, array_shape);
+     }
+ 
+@@ -699,7 +642,7 @@
+ 
+     sinqf_(&i_n, io_x, i_wsave);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      x = dcl_crealary2obj(io_x, (i_n), 1, array_shape);
+     }
+ 
+@@ -728,7 +671,7 @@
+ 
+     sinqi_(&i_n, o_wsave);
+ 
+-    {int array_shape[1] = {3*i_n+15};
++    {na_shape_t array_shape[1] = {3*i_n+15};
+      wsave = dcl_crealary2obj(o_wsave, (3*i_n+15), 1, array_shape);
+     }
+ 
+@@ -770,7 +713,7 @@
+ 
+     sint_(&i_n, io_x, i_wsave);
+ 
+-    {int array_shape[1] = {i_n};
++    {na_shape_t array_shape[1] = {i_n};
+      x = dcl_crealary2obj(io_x, (i_n), 1, array_shape);
+     }
+ 
+@@ -799,7 +742,7 @@
+ 
+     sinti_(&i_n, o_wsave);
+ 
+-    {int array_shape[1] = {2*i_n+i_n/2+15};
++    {na_shape_t array_shape[1] = {2*i_n+i_n/2+15};
+      wsave = dcl_crealary2obj(o_wsave, (2*i_n+i_n/2+15), 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math2_intrlib.c ruby-dcl-1.7.0/math2_intrlib.c
+--- ruby-dcl-1.7.0_org/math2_intrlib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math2_intrlib.c	2015-01-21 20:14:49.841299086 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_vrintr(obj, rx, n, jx)
+@@ -90,7 +33,7 @@
+ 
+     vrintr_(io_rx, &i_n, &i_jx);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      rx = dcl_crealary2obj(io_rx, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math2_rnmlib.c ruby-dcl-1.7.0/math2_rnmlib.c
+--- ruby-dcl-1.7.0_org/math2_rnmlib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math2_rnmlib.c	2015-01-21 20:11:58.153421322 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_vrrnm(obj, rx, n, jx, jy, nb)
+@@ -103,7 +46,7 @@
+ 
+     vrrnm_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_nb);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -155,7 +98,7 @@
+ 
+     vrrnm0_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_nb);
+ 
+-    {int array_shape[1] = {i_jy*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jy*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jy*(i_n-1)+1, 1, array_shape);
+     }
+ 
+@@ -207,7 +150,7 @@
+ 
+     vrrnm1_(i_rx, o_ry, &i_n, &i_jx, &i_jy, &i_nb);
+ 
+-    {int array_shape[1] = {i_jx*(i_n-1)+1};
++    {na_shape_t array_shape[1] = {i_jx*(i_n-1)+1};
+      ry = dcl_crealary2obj(o_ry, i_jx*(i_n-1)+1, 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math2_shtlib.c ruby-dcl-1.7.0/math2_shtlib.c
+--- ruby-dcl-1.7.0_org/math2_shtlib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math2_shtlib.c	2015-01-21 20:15:24.755001393 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_shtlib(obj)
+@@ -99,7 +42,7 @@
+ 
+     shtint_(&i_mm, &i_jm, &i_im, o_work);
+ 
+-    {int array_shape[1] = {(i_jm+1)*(4*i_jm+5*i_mm+14)+(i_mm+1)*(i_mm+1)+i_mm+2+6*i_im+15};
++    {na_shape_t array_shape[1] = {(i_jm+1)*(4*i_jm+5*i_mm+14)+(i_mm+1)*(i_mm+1)+i_mm+2+6*i_im+15};
+      work = dcl_crealary2obj(o_work, (i_jm+1)*(4*i_jm+5*i_mm+14)+(i_mm+1)*(i_mm+1)+i_mm+2+6*i_im+15, 1, array_shape);
+     }
+ 
+@@ -140,7 +83,7 @@
+ 
+     shtlap_(&i_mm, &i_ind, i_a, o_b);
+ 
+-    {int array_shape[1] = {(i_mm+1)*(i_mm+1)};
++    {na_shape_t array_shape[1] = {(i_mm+1)*(i_mm+1)};
+      b = dcl_crealary2obj(o_b, (i_mm+1)*(i_mm+1), 1, array_shape);
+     }
+ 
+@@ -224,7 +167,7 @@
+ 
+     shtfun_(&i_mm, &i_jm, &i_m, o_fun, i_work);
+ 
+-    {int array_shape[2] = {(2*i_jm+1), (i_mm-i_m+1)};
++    {na_shape_t array_shape[2] = {(2*i_jm+1), (i_mm-i_m+1)};
+      fun = dcl_crealary2obj(o_fun, ((2*i_jm+1)*(i_mm-i_m+1)), 2, array_shape);
+     }
+ 
+@@ -285,7 +228,7 @@
+ 
+     shtlfw_(&i_mm, &i_jm, &i_m, &i_isw, i_wm, o_sm, i_work);
+ 
+-    {int array_shape[1] = {i_mm-i_m+1};
++    {na_shape_t array_shape[1] = {i_mm-i_m+1};
+      sm = dcl_crealary2obj(o_sm, (i_mm-i_m+1), 1, array_shape);
+     }
+ 
+@@ -347,7 +290,7 @@
+ 
+     shtlbw_(&i_mm, &i_jm, &i_m, &i_isw, i_sm, o_wm, i_work);
+ 
+-    {int array_shape[1] = {2*i_jm+1};
++    {na_shape_t array_shape[1] = {2*i_jm+1};
+      wm = dcl_crealary2obj(o_wm, (2*i_jm+1), 1, array_shape);
+     }
+ 
+@@ -404,7 +347,7 @@
+ 
+     shts2w_(&i_mm, &i_jm, &i_isw, i_s, o_w, i_work);
+ 
+-    {int array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
++    {na_shape_t array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
+      w = dcl_crealary2obj(o_w, ((2*i_jm+1)*(2*i_mm+1)), 2, array_shape);
+     }
+ 
+@@ -471,7 +414,7 @@
+ 
+     shtswa_(&i_mm, &i_jm, &i_isw, &i_m1, &i_m2, i_s, o_w, i_work);
+ 
+-    {int array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
++    {na_shape_t array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
+      w = dcl_crealary2obj(o_w, ((2*i_jm+1)*(2*i_mm+1)), 2, array_shape);
+     }
+ 
+@@ -528,7 +471,7 @@
+ 
+     shtswz_(&i_mm, &i_jm, &i_isw, i_s, o_wz, i_work);
+ 
+-    {int array_shape[1] = {2*i_jm+1};
++    {na_shape_t array_shape[1] = {2*i_jm+1};
+      wz = dcl_crealary2obj(o_wz, (2*i_jm+1), 1, array_shape);
+     }
+ 
+@@ -593,10 +536,10 @@
+ 
+     shtswm_(&i_mm, &i_jm, &i_m, &i_isw, i_s, o_wr, o_wi, i_work);
+ 
+-    {int array_shape[1] = {2*i_jm+1};
++    {na_shape_t array_shape[1] = {2*i_jm+1};
+      wr = dcl_crealary2obj(o_wr, (2*i_jm+1), 1, array_shape);
+     }
+-    {int array_shape[1] = {2*i_jm+1};
++    {na_shape_t array_shape[1] = {2*i_jm+1};
+      wi = dcl_crealary2obj(o_wi, (2*i_jm+1), 1, array_shape);
+     }
+ 
+@@ -668,7 +611,7 @@
+ 
+     shtswj_(&i_mm, &i_jm, &i_isw, &i_j, &i_m1, &i_m2, i_s, o_wj, i_work);
+ 
+-    {int array_shape[1] = {2*i_mm+1};
++    {na_shape_t array_shape[1] = {2*i_mm+1};
+      wj = dcl_crealary2obj(o_wj, (2*i_mm+1), 1, array_shape);
+     }
+ 
+@@ -725,7 +668,7 @@
+ 
+     shtw2s_(&i_mm, &i_jm, &i_isw, i_s, o_w, i_work);
+ 
+-    {int array_shape[2] = {(i_mm+1), (i_mm+1)};
++    {na_shape_t array_shape[2] = {(i_mm+1), (i_mm+1)};
+      w = dcl_crealary2obj(o_w, ((i_mm+1)*(i_mm+1)), 2, array_shape);
+     }
+ 
+@@ -782,7 +725,7 @@
+ 
+     shtw2g_(&i_mm, &i_jm, &i_im, i_w, o_g, i_work);
+ 
+-    {int array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
++    {na_shape_t array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
+      g = dcl_crealary2obj(o_g, ((2*i_im+1)*(2*i_jm+1)), 2, array_shape);
+     }
+ 
+@@ -849,7 +792,7 @@
+ 
+     shtwga_(&i_mm, &i_jm, &i_im, &i_m1, &i_m2, i_w, o_g, i_work);
+ 
+-    {int array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
++    {na_shape_t array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
+      g = dcl_crealary2obj(o_g, ((2*i_im+1)*(2*i_jm+1)), 2, array_shape);
+     }
+ 
+@@ -920,7 +863,7 @@
+ 
+     shtwgm_(&i_mm, &i_jm, &i_im, &i_m, i_wr, i_wi, o_g, i_work);
+ 
+-    {int array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
++    {na_shape_t array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
+      g = dcl_crealary2obj(o_g, ((2*i_im+1)*(2*i_jm+1)), 2, array_shape);
+     }
+ 
+@@ -964,7 +907,7 @@
+ 
+     shtwgz_(&i_jm, &i_im, i_wz, o_g);
+ 
+-    {int array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
++    {na_shape_t array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
+      g = dcl_crealary2obj(o_g, ((2*i_im+1)*(2*i_jm+1)), 2, array_shape);
+     }
+ 
+@@ -1025,7 +968,7 @@
+ 
+     shtwgj_(&i_mm, &i_im, &i_m1, &i_m2, i_wj, o_gj, i_work);
+ 
+-    {int array_shape[1] = {2*i_im+1};
++    {na_shape_t array_shape[1] = {2*i_im+1};
+      gj = dcl_crealary2obj(o_gj, (2*i_im+1), 1, array_shape);
+     }
+ 
+@@ -1082,7 +1025,7 @@
+ 
+     shtg2w_(&i_mm, &i_jm, &i_im, i_g, o_w, i_work);
+ 
+-    {int array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
++    {na_shape_t array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
+      w = dcl_crealary2obj(o_w, ((2*i_jm+1)*(2*i_mm+1)), 2, array_shape);
+     }
+ 
+@@ -1147,10 +1090,10 @@
+ 
+     shts2g_(&i_mm, &i_jm, &i_im, &i_isw, i_s, o_w, o_g, i_work);
+ 
+-    {int array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
++    {na_shape_t array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
+      w = dcl_crealary2obj(o_w, ((2*i_jm+1)*(2*i_mm+1)), 2, array_shape);
+     }
+-    {int array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
++    {na_shape_t array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
+      g = dcl_crealary2obj(o_g, ((2*i_im+1)*(2*i_jm+1)), 2, array_shape);
+     }
+ 
+@@ -1225,10 +1168,10 @@
+ 
+     shtsga_(&i_mm, &i_jm, &i_im, &i_isw, &i_m1, &i_m2, i_s, o_w, o_g, i_work);
+ 
+-    {int array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
++    {na_shape_t array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
+      w = dcl_crealary2obj(o_w, ((2*i_jm+1)*(2*i_mm+1)), 2, array_shape);
+     }
+-    {int array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
++    {na_shape_t array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
+      g = dcl_crealary2obj(o_g, ((2*i_im+1)*(2*i_jm+1)), 2, array_shape);
+     }
+ 
+@@ -1293,10 +1236,10 @@
+ 
+     shtsgz_(&i_mm, &i_jm, &i_im, &i_isw, i_s, o_wz, o_g, i_work);
+ 
+-    {int array_shape[1] = {2*i_jm+1};
++    {na_shape_t array_shape[1] = {2*i_jm+1};
+      wz = dcl_crealary2obj(o_wz, (2*i_jm+1), 1, array_shape);
+     }
+-    {int array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
++    {na_shape_t array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
+      g = dcl_crealary2obj(o_g, ((2*i_im+1)*(2*i_jm+1)), 2, array_shape);
+     }
+ 
+@@ -1369,13 +1312,13 @@
+ 
+     shtsgm_(&i_mm, &i_jm, &i_im, &i_m, &i_isw, i_s, o_wr, o_wi, o_g, i_work);
+ 
+-    {int array_shape[1] = {2*i_jm+1};
++    {na_shape_t array_shape[1] = {2*i_jm+1};
+      wr = dcl_crealary2obj(o_wr, (2*i_jm+1), 1, array_shape);
+     }
+-    {int array_shape[1] = {2*i_jm+1};
++    {na_shape_t array_shape[1] = {2*i_jm+1};
+      wi = dcl_crealary2obj(o_wi, (2*i_jm+1), 1, array_shape);
+     }
+-    {int array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
++    {na_shape_t array_shape[2] = {(2*i_im+1), (2*i_jm+1)};
+      g = dcl_crealary2obj(o_g, ((2*i_im+1)*(2*i_jm+1)), 2, array_shape);
+     }
+ 
+@@ -1455,10 +1398,10 @@
+ 
+     shtsgj_(&i_mm, &i_jm, &i_im, &i_isw, &i_j, &i_m1, &i_m2, i_s, o_wj, o_gj, i_work);
+ 
+-    {int array_shape[1] = {2*i_mm+1};
++    {na_shape_t array_shape[1] = {2*i_mm+1};
+      wj = dcl_crealary2obj(o_wj, (2*i_mm+1), 1, array_shape);
+     }
+-    {int array_shape[1] = {2*i_im+1};
++    {na_shape_t array_shape[1] = {2*i_im+1};
+      gj = dcl_crealary2obj(o_gj, (2*i_im+1), 1, array_shape);
+     }
+ 
+@@ -1523,10 +1466,10 @@
+ 
+     shtg2s_(&i_mm, &i_jm, &i_im, &i_isw, i_g, o_w, o_s, i_work);
+ 
+-    {int array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
++    {na_shape_t array_shape[2] = {(2*i_jm+1), (2*i_mm+1)};
+      w = dcl_crealary2obj(o_w, ((2*i_jm+1)*(2*i_mm+1)), 2, array_shape);
+     }
+-    {int array_shape[1] = {(i_mm+1)*(i_mm+1)};
++    {na_shape_t array_shape[1] = {(i_mm+1)*(i_mm+1)};
+      s = dcl_crealary2obj(o_s, (i_mm+1)*(i_mm+1), 1, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/math2_vstlib.c ruby-dcl-1.7.0/math2_vstlib.c
+--- ruby-dcl-1.7.0_org/math2_vstlib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/math2_vstlib.c	2015-01-21 20:16:33.551011137 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_vs1int(obj, ix)
+@@ -82,10 +25,10 @@
+ 
+     vs1int_(o_wz, o_nw, &i_ix);
+ 
+-    {int array_shape[2] = {i_ix, 2};
++    {na_shape_t array_shape[2] = {i_ix, 2};
+      wz = dcl_crealary2obj(o_wz, (i_ix*2), 2, array_shape);
+     }
+-    {int array_shape[1] = {i_ix};
++    {na_shape_t array_shape[1] = {i_ix};
+      nw = dcl_cintegerary2obj(o_nw, (i_ix), 1, array_shape);
+     }
+ 
+@@ -136,10 +79,10 @@
+ 
+     vs1din_(io_wz, io_nw, &i_ix, i_x);
+ 
+-    {int array_shape[2] = {i_ix, 2};
++    {na_shape_t array_shape[2] = {i_ix, 2};
+      wz = dcl_crealary2obj(io_wz, (i_ix*2), 2, array_shape);
+     }
+-    {int array_shape[1] = {i_ix};
++    {na_shape_t array_shape[1] = {i_ix};
+      nw = dcl_cintegerary2obj(io_nw, (i_ix), 1, array_shape);
+     }
+ 
+@@ -184,7 +127,7 @@
+ 
+     vs1out_(io_wz, i_nw, &i_ix);
+ 
+-    {int array_shape[2] = {i_ix, 2};
++    {na_shape_t array_shape[2] = {i_ix, 2};
+      wz = dcl_crealary2obj(io_wz, (i_ix*2), 2, array_shape);
+     }
+ 
+@@ -221,10 +164,10 @@
+ 
+     vs2int_(o_wz, o_nw, &i_ix, &i_iy);
+ 
+-    {int array_shape[3] = {i_ix, i_iy, 5};
++    {na_shape_t array_shape[3] = {i_ix, i_iy, 5};
+      wz = dcl_crealary2obj(o_wz, (i_ix*i_iy*5), 3, array_shape);
+     }
+-    {int array_shape[2] = {i_ix, i_iy};
++    {na_shape_t array_shape[2] = {i_ix, i_iy};
+      nw = dcl_cintegerary2obj(o_nw, (i_ix*i_iy), 2, array_shape);
+     }
+ 
+@@ -289,10 +232,10 @@
+ 
+     vs2din_(io_wz, io_nw, &i_ix, &i_iy, i_x, i_y);
+ 
+-    {int array_shape[3] = {i_ix, i_iy, 5};
++    {na_shape_t array_shape[3] = {i_ix, i_iy, 5};
+      wz = dcl_crealary2obj(io_wz, (i_ix*i_iy*5), 3, array_shape);
+     }
+-    {int array_shape[2] = {i_ix, i_iy};
++    {na_shape_t array_shape[2] = {i_ix, i_iy};
+      nw = dcl_cintegerary2obj(io_nw, (i_ix*i_iy), 2, array_shape);
+     }
+ 
+@@ -343,7 +286,7 @@
+ 
+     vs2out_(io_wz, i_nw, &i_ix, &i_iy);
+ 
+-    {int array_shape[3] = {i_ix, i_iy, 5};
++    {na_shape_t array_shape[3] = {i_ix, i_iy, 5};
+      wz = dcl_crealary2obj(io_wz, (i_ix*i_iy*5), 3, array_shape);
+     }
+ 
+diff -uNr ruby-dcl-1.7.0_org/misc1_chnlib.c ruby-dcl-1.7.0/misc1_chnlib.c
+--- ruby-dcl-1.7.0_org/misc1_chnlib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/misc1_chnlib.c	2015-01-21 19:55:47.400784678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_chngc(obj, ch, ca, cb)
+diff -uNr ruby-dcl-1.7.0_org/misc1_datelib.c ruby-dcl-1.7.0/misc1_datelib.c
+--- ruby-dcl-1.7.0_org/misc1_datelib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/misc1_datelib.c	2015-01-21 19:55:47.401684678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_date12(obj, idate)
+diff -uNr ruby-dcl-1.7.0_org/misc1_fmtlib.c ruby-dcl-1.7.0/misc1_fmtlib.c
+--- ruby-dcl-1.7.0_org/misc1_fmtlib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/misc1_fmtlib.c	2015-01-21 19:55:47.401684678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_chval(obj, cfmt, val)
+diff -uNr ruby-dcl-1.7.0_org/misc1_misclib.c ruby-dcl-1.7.0/misc1_misclib.c
+--- ruby-dcl-1.7.0_org/misc1_misclib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/misc1_misclib.c	2015-01-21 19:55:47.402584678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_cns(obj, ins)
+diff -uNr ruby-dcl-1.7.0_org/misc1_randlib.c ruby-dcl-1.7.0/misc1_randlib.c
+--- ruby-dcl-1.7.0_org/misc1_randlib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/misc1_randlib.c	2015-01-21 19:55:47.402584678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ #if DCLVER >= 544
+ 
+diff -uNr ruby-dcl-1.7.0_org/misc1_timelib.c ruby-dcl-1.7.0/misc1_timelib.c
+--- ruby-dcl-1.7.0_org/misc1_timelib.c	2012-04-25 11:51:55.000000000 +0900
++++ ruby-dcl-1.7.0/misc1_timelib.c	2015-01-21 19:55:47.402584678 +0900
+@@ -2,64 +2,7 @@
+  * $Id: p_header,v 1.2 2011-02-23 17:47:10 koshiro Exp $
+  */
+ 
+-#include <stdio.h>
+-#include "ruby.h"
+-#include "libtinyf2c.h"
+-#include "narray.h"
+-
+-/* for compatibility with ruby 1.6 */
+-#ifndef StringValuePtr
+-#define StringValuePtr(s) STR2CSTR(s)
+-#endif
+-
+-#define DFLT_SIZE 32
+-
+-extern char    *dcl_obj2ccharary(VALUE, int, int);
+-extern integer *dcl_obj2cintegerary(VALUE);
+-extern real    *dcl_obj2crealary(VALUE);
+-extern complex *dcl_obj2ccomplexary(VALUE);
+-extern logical *dcl_obj2clogicalary(VALUE);
+-
+-extern VALUE dcl_ccharary2obj(char *, int, int);
+-extern VALUE dcl_cintegerary2obj(integer *, int, int, int *);
+-extern VALUE dcl_crealary2obj(real *, int, int, int *);
+-extern VALUE dcl_ccomplexary2obj(complex *, int, char *);
+-extern VALUE dcl_clogicalary2obj(logical *, int, int, int *);
+-
+-extern void dcl_freeccharary(char *);
+-extern void dcl_freecintegerary(integer *);
+-extern void dcl_freecrealary(real *);
+-extern void dcl_freeccomplexary(complex *);
+-extern void dcl_freeclogicalary(logical *);
+-
+-/* for functions which return real */
+-/* fnclib */
+-extern real rd2r_(real *);
+-extern real rr2d_(real *);
+-extern real rexp_(real *, integer *, integer *);
+-extern real rfpi_(void);
+-extern real rmod_(real *, real *);
+-/* gnmlib */
+-extern real rgnlt_(real *);
+-extern real rgnle_(real *);
+-extern real rgngt_(real *);
+-extern real rgnge_(real *);
+-/* rfalib */
+-extern real rmax_(real *, integer *, integer *);
+-extern real rmin_(real *, integer *, integer *);
+-extern real rsum_(real *, integer *, integer *);
+-extern real rave_(real *, integer *, integer *);
+-extern real rvar_(real *, integer *, integer *);
+-extern real rstd_(real *, integer *, integer *);
+-extern real rrms_(real *, integer *, integer *);
+-extern real ramp_(real *, integer *, integer *);
+-/* rfblib */
+-extern real rprd_(real *, real *, integer *, integer *, integer *);
+-extern real rcov_(real *, real *, integer *, integer *, integer *);
+-extern real rcor_(real *, real *, integer *, integer *, integer *);
+-
+-
+-extern VALUE mDCL;
++#include "dcl.h"
+ 
+ static VALUE
+ dcl_time12(obj, itime)
