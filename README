@@ -1,0 +1,41 @@
+* What is NArrayBigmem
+
+  + NArrayBigmem is NArray with big memory support
+
+* Difference from NArray
+
+  + Big memory (over 2GB) support
+  + new class NArray::LINT (64bit integer)
+  + OpenMP support
+  + Internal memory struct of NArray object (recompile is necessary for exteded library)
+
+* Installation
+
+  + Compile & Install NArrayBigmem
+
+    ruby extconf.rb
+    make
+    make install
+
+  + For OpenMP support
+
+    OpenMP is enable for gcc compiler by default.
+    However it is disabled for other compiler.
+    "--openmp=" option for extconf.rb is available to enable and disable OpenMP support.
+    If you want enable it for other compiler, execute extconf.rb with --openmp option.
+      ruby extconf.rb --openmp=openmp_option
+    If you want disable it for gcc compiler, --openmp option without any argument can be used.
+      ruby extconf.rb --openmp=
+
+* Run
+
+  + load library
+    require 'narray'
+
+  + enable OpenMP
+
+    OpenMP is disabled by default at runtime.
+    Set number of threads to "OMP_NUM_THREADS" environmental variable if you want enable it.
+    If you want set the number in Ruby script, just insert the following code:
+      ENV["OMP_NUM_THREADS"] = num_threads
+  
