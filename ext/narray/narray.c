@@ -44,9 +44,9 @@ const int na_sizeof[NA_NTYPES+1] = {
 const char *na_typestring[] = {
   "none",
   "byte",	/* 1 */
-  "int16",	/* 2 */
-  "int32",	/* 3 */
-  "int64",	/* 4 */
+  "sint",	/* 2 */
+  "int",	/* 3 */
+  "long",	/* 4 */
   "sfloat",	/* 5 */
   "float",	/* 6 */
   "scomplex",	/* 7 */
