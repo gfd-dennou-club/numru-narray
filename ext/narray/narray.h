@@ -1,7 +1,8 @@
 /*
   narray.h
-  Numerical Array Extention for Ruby
+  NArray with big memory support
     (C) Copyright 1999-2011 by Masahiro TANAKA
+    (C) Copyright 2013-2015 by Seiya NISHIZAWA
 
   This program is free software.
   You can distribute/modify this program
@@ -25,6 +26,9 @@
 
 #define NARRAY_VERSION "0.6.0.8"
 #define NARRAY_VERSION_CODE 608
+
+#define NARRAYBIGMEM_VERSION "0.0.0"
+#define NARRAYBIGMEM_VERSION_CODE 000
 
 /* big memory support */
 #define NARRAY_BIGMEM 1

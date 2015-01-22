@@ -1,9 +1,8 @@
 require 'rubygems'
 require 'rubygems/package_task'
+require 'rake/extensiontask'
 
-FileUtils.ln_s('.', 'src') if !File.symlink?('src')
-
-load './narray.gemspec'
+load './narray-bigmem.gemspec'
 
 pkgtsk = Gem::PackageTask.new(GEMSPEC) do |pkg|
   pkg.need_zip = true
@@ -21,4 +20,8 @@ end
 
 task :push => GEMFILE do
   sh "gem push #{GEMFILE}"
+end
+
+Rake::ExtensionTask.new "narray" do |ext|
+  ext.lib_dir = "lib/narray"
 end
