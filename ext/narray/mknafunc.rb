@@ -62,10 +62,10 @@ def mksetfuncs(name,op,id,funcs)
 	    f = k[2]
 	  #end
 	  f = f.
-	    gsub(/p1\./,"((#{td[i]}*)p1)[i].").
-	    gsub(/p2\./,"((#{td[j]}*)p2)[i].").
-	    gsub(/\*p1/,"((#{td[i]}*)p1)[i]").
-	    gsub(/\*p2/,"((#{td[j]}*)p2)[i]").
+	    gsub(/p1\./,"((#{td[i]}*)(p1+i*i1))->").
+	    gsub(/p2\./,"((#{td[j]}*)(p2+i*i2))->").
+	    gsub(/\*p1/,"*((#{td[i]}*)(p1+i*i1))").
+	    gsub(/\*p2/,"*((#{td[j]}*)(p2+i*i2))").
 	    gsub(/ = /," = (#{tr[i]})").
             gsub(/#id/,id).
             gsub(/#op/,op).
