@@ -233,20 +233,6 @@ mkfuncs('BRv', $data_types, $data_types, [nil] +
  ["*p1 = rb_funcall(*p2,'~',0);"]
 )
 
-mkfuncs('Min', $data_types, $data_types, [nil] +
- ["if (*p1>*p2) *p1=*p2;"]*4 +
- ["if (notnan#C((type1*)p2) && *p1>*p2) *p1=*p2;"]*2 +
- [nil]*2 +
- ["if (FIX2INT(rb_funcall(*p1,na_id_compare,1,*p2))>0) *p1=*p2;"]
-)
-
-mkfuncs('Max', $data_types, $data_types, [nil] +
- ["if (*p1<*p2) *p1=*p2;"]*4 +
- ["if (notnan#C((type1*)p2) && *p1<*p2) *p1=*p2;"]*2 +
- [nil]*2 +
- ["if (FIX2INT(rb_funcall(*p1,na_id_compare,1,*p2))<0) *p1=*p2;"]
-)
-
 
 mksortfuncs('Sort', $data_types, $data_types, [nil] +
  ["
@@ -304,6 +290,19 @@ mkfuncs('SbtU', $data_types, $data_types,
  ["*p1 = rb_funcall(*p1,'-',1,*p2);"]
 )
 
+mkfuncs('Min', $data_types, $data_types, [nil] +
+ ["if (*p1>*p2) *p1=*p2;"]*4 +
+ ["if (notnan#C((type1*)p2) && *p1>*p2) *p1=*p2;"]*2 +
+ [nil]*2 +
+ ["if (FIX2INT(rb_funcall(*p1,na_id_compare,1,*p2))>0) *p1=*p2;"]
+)
+
+mkfuncs('Max', $data_types, $data_types, [nil] +
+ ["if (*p1<*p2) *p1=*p2;"]*4 +
+ ["if (notnan#C((type1*)p2) && *p1<*p2) *p1=*p2;"]*2 +
+ [nil]*2 +
+ ["if (FIX2INT(rb_funcall(*p1,na_id_compare,1,*p2))<0) *p1=*p2;"]
+)
 $func_body =
   "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
 {
