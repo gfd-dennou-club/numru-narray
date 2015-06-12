@@ -88,7 +88,7 @@ static int
 }
 
 
-static int
+static na_shape_t
  na_ary_to_index(struct NARRAY *a1, na_shape_t size, struct slice *s)
 {
   na_shape_t i;
@@ -793,6 +793,7 @@ static void
 
   /* make Slice from index */
   sl    = ALLOCA_N(struct slice,2);
+  na_ary_to_index( NA_STRUCT(idx), dst->total, sl );
 
   /* 1-dimensionize */
   if (dst->rank > 1) {
