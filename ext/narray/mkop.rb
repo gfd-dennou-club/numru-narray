@@ -29,7 +29,7 @@ const int na_upcast[NA_NTYPES][NA_NTYPES] = {
 const int na_no_cast[NA_NTYPES] =
  { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
 const int na_cast_real[NA_NTYPES] =
- { 0, 1, 2, 3, 4, 5, 4, 5, 8, 9 };
+ { 0, 1, 2, 3, 4, 5, 6, 5, 6, 9 };
 const int na_cast_comp[NA_NTYPES] =
  { 0, 7, 7, 7, 7, 7, 8, 7, 8, 9 };
 const int na_cast_round[NA_NTYPES] =
