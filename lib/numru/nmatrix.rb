@@ -5,7 +5,7 @@
 #
 # ------ NMatrix ------
 #
-class NMatrix < NArray
+class NumRu::NMatrix < NumRu::NArray
   CLASS_DIMENSION = 2
 
   def +(other)
@@ -158,7 +158,7 @@ end # class NMatrix
 #
 # ------ NVector ------
 #
-class NVector < NArray
+class NumRu::NVector < NumRu::NArray
   CLASS_DIMENSION = 1
 
   def +(other)

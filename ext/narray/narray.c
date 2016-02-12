@@ -62,9 +62,9 @@ static int na_gc_freq = 2500000;   /* Frequency of Garbage Collection */
 
 void Init_na_array(void);
 void Init_na_index(void);
-void Init_nmath(void);
+void Init_nmath(VALUE);
 void Init_na_funcs(void);
-void Init_na_linalg(void);
+void Init_na_linalg(VALUE);
 void Init_na_random(void);
 
 
@@ -1192,6 +1192,8 @@ void
  Init_narray()
 {
 
+    VALUE mNumRu;
+
     ID id_Complex = rb_intern("Complex");
 
     if (!rb_const_defined( rb_cObject, id_Complex)) {
@@ -1201,7 +1203,8 @@ void
     cComplex = rb_const_get( rb_cObject, rb_intern("Complex") );
 
     /* define NArray class */
-    cNArray = rb_define_class("NArray",rb_cObject);
+    mNumRu = rb_define_module("NumRu");
+    cNArray = rb_define_class_under(mNumRu, "NArray", rb_cObject);
 
     /* class methods */
     rb_define_singleton_method(cNArray,"new",na_s_new,-1);
@@ -1302,11 +1305,11 @@ void
 
     Init_na_array();
     Init_na_index();
-    Init_nmath();
+    Init_nmath(mNumRu);
     Init_na_funcs();
     Init_na_random();
 
-    cNArrayScalar = rb_define_class("NArrayScalar", cNArray);
+    cNArrayScalar = rb_define_class_under(mNumRu, "NArrayScalar", cNArray);
 
     na_id_beg  	= rb_intern("begin");
     na_id_end  	= rb_intern("end");
@@ -1334,8 +1337,8 @@ void
 
     na_id_class_dim = rb_intern("CLASS_DIMENSION");
 
-    Init_na_linalg();
+    Init_na_linalg(mNumRu);
 
     /* NArray extention script */
-    rb_require("narray_ext.rb");
+    rb_require("numru/narray_ext.rb");
 }

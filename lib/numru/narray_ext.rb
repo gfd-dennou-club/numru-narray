@@ -6,7 +6,7 @@
 #  under the same terms as Ruby itself.
 #  NO WARRANTY.
 #
-class NArray
+class NumRu::NArray
 
   def self.cast(array,type=nil)
     case array
@@ -282,7 +282,7 @@ class NArray
 end
 
 
-module NMath
+module NumRu::NMath
   PI = Math::PI
   E = Math::E
 
@@ -359,4 +359,4 @@ module FFTW
   module_function :convol
 end
 
-require 'nmatrix'
+require 'numru/nmatrix'

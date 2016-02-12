@@ -1,4 +1,4 @@
 unless ENV["OMP_NUM_THREADS"]
   ENV["OMP_NUM_THREADS"] = "1"
 end
-require "narray/narray"
+require "numru/narray/narray"
