@@ -2,7 +2,7 @@ require 'rubygems'
 require 'rubygems/package_task'
 require 'rake/extensiontask'
 
-load './narray-bigmem.gemspec'
+load './numru-narray.gemspec'
 
 pkgtsk = Gem::PackageTask.new(GEMSPEC) do |pkg|
   pkg.need_zip = true

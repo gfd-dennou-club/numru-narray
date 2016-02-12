@@ -120,4 +120,4 @@ have_type("uint64_t", header)
 $objs = srcs.collect{|i| i+".o"}
 
 create_conf_h("narray_config.h")
-create_makefile("narray/narray")
+create_makefile("numru/narray/narray")

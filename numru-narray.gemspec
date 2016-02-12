@@ -1,22 +1,23 @@
-open("ext/narray/narray.h") do |f|
+open("ext/numru/narray/narray.h") do |f|
   f.each_line do |l|
-    if /NARRAYBIGMEM_VERSION "([\d.]+)"/ =~ l
-      NARRAYBIGMEM_VERSION = $1
+    if /NUMRU_NARRAY_VERSION "([\d.]+)"/ =~ l
+      NUMRU_NARRAY_VERSION = $1
       break
     end
   end
 end
 
 GEMSPEC = Gem::Specification.new do |s|
-  s.name = "narray-bigmem"
-  s.version = NARRAYBIGMEM_VERSION
+  s.name = "numru-narray"
+  s.version = NUMRU_NARRAY_VERSION
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Seiya Nishizawa"]
   s.date = Time.now.strftime("%F")
   s.description = "NArray with big memory support"
+  s.summary = "NumRu-NArray is a Ruby class library for multi-dimensional array and a fork of NArray with big memory support"
   s.email = "seiya@gfd-dennou.org"
-  s.extensions = ["ext/narray/extconf.rb"]
+  s.extensions = ["ext/numru/narray/extconf.rb"]
   s.require_paths = ["lib"]
   s.files = %w[
 ChangeLog
@@ -26,23 +27,23 @@ README_NARRAY.en
 README_NARRAY.ja
 SPEC.en
 SPEC.ja
-ext/narray/depend
-ext/narray/extconf.rb
-ext/narray/mkmath.rb
-ext/narray/mknafunc.rb
-ext/narray/mkop.rb
-ext/narray/na_array.c
-ext/narray/na_func.c
-ext/narray/na_index.c
-ext/narray/na_linalg.c
-ext/narray/na_random.c
-ext/narray/narray.c
-ext/narray/narray.def
-ext/narray/narray.h
-ext/narray/narray_local.h
-lib/narray.rb
-lib/narray_ext.rb
-lib/nmatrix.rb
+ext/numru/narray/depend
+ext/numru/narray/extconf.rb
+ext/numru/narray/mkmath.rb
+ext/numru/narray/mknafunc.rb
+ext/numru/narray/mkop.rb
+ext/numru/narray/na_array.c
+ext/numru/narray/na_func.c
+ext/numru/narray/na_index.c
+ext/numru/narray/na_linalg.c
+ext/numru/narray/na_random.c
+ext/numru/narray/narray.c
+ext/numru/narray/narray.def
+ext/numru/narray/narray.h
+ext/numru/narray/narray_local.h
+lib/numru/narray.rb
+lib/numru/narray_ext.rb
+lib/numru/nmatrix.rb
 ]
   s.rdoc_options = %w[
     --title NArray
@@ -59,10 +60,7 @@ lib/nmatrix.rb
     --exclude README*
     --exclude SPEC*
   ]
-  s.homepage = "https://github.com/seiya/narray-bigmeme/"
-#  s.rubyforge_project = "narray"
-#  s.rubygems_version = "1.8.10"
-  s.summary = "NArray with big memory support"
+  s.homepage = "https://github.com/seiya/numru-narray/"
   s.license = "Ruby"
 
   if s.respond_to? :specification_version then

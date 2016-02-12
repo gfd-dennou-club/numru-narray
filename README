@@ -1,6 +1,6 @@
-* What is NArrayBigmem
+* What is NumRu-NArray
 
-  + NArrayBigmem is NArray with big memory support
+  + NumRu-NArray is a fork of NArray with big memory support (old name NArray-Bigmem)
 
 * Difference from NArray
 
@@ -11,7 +11,7 @@
 
 * Installation
 
-  + Compile & Install NArrayBigmem
+  + Compile & Install NumRu NArray
 
     ruby extconf.rb
     make
