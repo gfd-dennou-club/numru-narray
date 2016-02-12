@@ -1,4 +1,4 @@
-require 'narray'
+require 'numru/narray'
 
 a = NArray.new(NArray::DFLOAT,5,5).indgen!
 print "a #=> "; p a

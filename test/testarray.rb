@@ -1,4 +1,4 @@
-require 'narray'
+require 'numru/narray'
 
 a = NArray.float(3,3).indgen
 

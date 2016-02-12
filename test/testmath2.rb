@@ -1,4 +1,4 @@
-require "narray"
+require "numru/narray"
 include NMath
 
 def testm x,name

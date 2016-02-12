@@ -1,4 +1,4 @@
-require "narray"
+require "numru/narray"
 T = (RUBY_VERSION<"1.8.0") ? Time : Process
 
 ruby_narray = system( "ruby -r narray dummy.rb" )

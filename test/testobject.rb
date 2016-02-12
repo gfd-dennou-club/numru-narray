@@ -1,4 +1,4 @@
-require 'narray'
+require 'numru/narray'
 require 'rational'
 
 n = 4

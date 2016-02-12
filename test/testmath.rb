@@ -1,4 +1,4 @@
-require 'narray'
+require 'numru/narray'
 include NMath
 
 def pr x

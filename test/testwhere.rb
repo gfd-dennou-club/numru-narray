@@ -1,4 +1,4 @@
-require 'narray'
+require 'numru/narray'
 
 a = NArray.float(8).indgen!
 

@@ -1,4 +1,4 @@
-require 'narray'
+require 'numru/narray'
 require 'rational'
 
 #class Rational

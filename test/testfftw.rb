@@ -1,4 +1,4 @@
-require 'narray'
+require 'numru/narray'
 
 x = NArray.complex(1024,1024).indgen!
 

@@ -1,4 +1,4 @@
-require 'narray'
+require 'numru/narray'
 
 def test a
   print a," #=> "

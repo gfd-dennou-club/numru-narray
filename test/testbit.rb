@@ -1,4 +1,4 @@
-require "narray"
+require "numru/narray"
 
 a = NArray.byte(10).indgen!
 

@@ -1,4 +1,4 @@
-require "narray"
+require "numru/narray"
 
 a = NArray.byte(10)
 a[2..4] = 1

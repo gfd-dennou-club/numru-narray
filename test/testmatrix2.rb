@@ -1,4 +1,4 @@
-require 'narray'
+require 'numru/narray'
 #require 'irb/xmp'
 # xmp :: http://www.ruby-lang.org/en/raa-list.rhtml?name=xmp
 def xp(s)
