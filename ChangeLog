@@ -1,3 +1,63 @@
+2016-02-12 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* update version
+
+2016-02-12 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* fix different types of the arguments of rb_range_beg_len
+
+2016-02-12 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* change name from NArray-Bigmem to NumRu-NArray
+
+2016-02-12 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* chnage require "numru/narray"
+
+2016-02-12 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* define NArray class under NumRu module
+
+2015-07-09 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* Merge pull request #1 from kouketsu/bugfix_mkop
+	* Fix na_cast_real
+2015-07-09 Shinya KOUKETSU <shinya.kouketsu@gmail.com>
+
+	* Fix na_cast_real
+
+2015-06-12 Takeshi Horinouchi <horinout>
+
+	* * debug (re-inserted a line in na_aset_array_index; return value type of na_ary_to_index)
+
+2015-05-23 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* bugfix for #min and #max
+
+2015-01-23 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* update NARRAYBIGMEM_VERSION to 0.0.1
+
+2015-01-23 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* bugfix in interval of memory access. e.g. transpose
+
+2015-01-22 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* change typecode string for integer as before
+
+2015-01-22 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* change directory structure and gemfile
+
+2015-01-21 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* add code the paches for compatibility for the original NArray
+
+2015-01-21 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* update ChangeLog from git log
+
 2015-01-21 Seiya Nishizawa <seiya@gfd-dennou.org>
 
 	* add mkchangelog.sh to create ChangeLog from git log
