@@ -1008,9 +1008,6 @@ static VALUE
 /*
  ------- Sum, Min, Max, Transpose --------
 */
-VALUE
- rb_range_beg_len(VALUE range, na_shape_t *begp, na_shape_t *lenp, na_shape_t len, int err );
-
 static int
  na_arg_to_rank(int argc, VALUE *argv, int rankc, int *rankv, int flag)
 /* e.g.: argv=[1,3..5]
@@ -1021,6 +1018,7 @@ static int
 */
 {
   int i, j, c=0;
+  long lr, ln;
   na_shape_t r, n;
   VALUE v;
 
@@ -1046,7 +1044,9 @@ static int
     }
     else
     if (CLASS_OF(v)==rb_cRange) {
-      rb_range_beg_len( v, &r, &n, rankc, 1 );
+      rb_range_beg_len( v, &lr, &ln, rankc, 1 );
+      r = (na_shape_t) lr;
+      n = (na_shape_t) ln;
       if ( c+n > rankc )
 	rb_raise(rb_eArgError, "too many ranks");
       if (flag) {
