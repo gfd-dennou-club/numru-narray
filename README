@@ -11,11 +11,14 @@
 
 * Installation
 
-  + Compile & Install NumRu NArray
+  + Install NumRu NArray
 
-    ruby extconf.rb
-    make
-    make install
+    % gem install numru-narray
+
+  + Compile (if you do not want to via gem)
+
+    % bundle install
+    % bundle exec rake compile
 
   + For OpenMP support
 
@@ -30,7 +33,7 @@
 * Run
 
   + load library
-    require 'narray'
+    require 'numru/narray'
 
   + enable OpenMP
 
