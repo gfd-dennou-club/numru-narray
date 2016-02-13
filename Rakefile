@@ -23,5 +23,6 @@ task :push => GEMFILE do
 end
 
 Rake::ExtensionTask.new "narray" do |ext|
-  ext.lib_dir = "lib/narray"
+  ext.ext_dir = "ext/numru/narray"
+  ext.lib_dir = "lib/numru/narray"
 end

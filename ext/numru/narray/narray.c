@@ -657,6 +657,19 @@ static VALUE
   return rb_str_new(ary->ptr,ary->total*na_sizeof[ary->type]);
 }
 
+/* method: to_s_refer -- convert the data contents to a binary string (not dup data) */
+static VALUE
+ na_to_s_refer(VALUE self)
+{
+  struct NARRAY *ary;
+  VALUE str;
+  GetNArray(self,ary);
+  if (NA_IsROBJ(ary))
+    rb_raise(rb_eTypeError,"cannot convert object-type NArray");
+  str = rb_str_new_static(ary->ptr,ary->total*na_sizeof[ary->type]);
+  return rb_obj_freeze(str);
+}
+
 
 /* method: to_binary -- convert the data contents to a BYTE type NArray */
 static VALUE
@@ -1264,6 +1277,7 @@ void
     rb_define_alias(cNArray, "map", "collect");
     rb_define_alias(cNArray, "map!", "collect!");
     rb_define_method(cNArray, "to_s", na_to_s, 0);
+    rb_define_method(cNArray, "to_s_refer", na_to_s_refer, 0);
     rb_define_method(cNArray, "to_f", na_to_float, 0);
     rb_define_method(cNArray, "to_i", na_to_integer, 0);
     rb_define_method(cNArray, "to_type", na_to_type, 1);
