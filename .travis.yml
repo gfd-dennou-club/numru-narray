@@ -1,0 +1,38 @@
+language: ruby
+os:
+ - linux
+ - osx
+rvm:
+ - 2.0.0
+ - 1.9.3
+cache:
+ - bundler
+before_script:
+ - bundle exec rake compile
+script:
+ - bundle exec ruby -Ilib test/ld.rb
+ - bundle exec ruby -Ilib test/statistics.rb
+ - bundle exec ruby -Ilib test/testarray.rb
+ - bundle exec ruby -Ilib test/testbit.rb
+ - bundle exec ruby -Ilib test/testcast.rb
+ - bundle exec ruby -Ilib test/testcomplex.rb
+ - bundle exec ruby -Ilib test/testindex.rb
+ - bundle exec ruby -Ilib test/testindexary.rb
+ - bundle exec ruby -Ilib test/testindexset.rb
+ - bundle exec ruby -Ilib test/testmask.rb
+ - bundle exec ruby -Ilib test/testmath.rb
+ - bundle exec ruby -Ilib test/testmath2.rb
+ - bundle exec ruby -Ilib test/testmatrix.rb
+ - bundle exec ruby -Ilib test/testmatrix2.rb
+ - bundle exec ruby -Ilib test/testmatrix3.rb
+ - bundle exec ruby -Ilib test/testminmax.rb
+ - bundle exec ruby -Ilib test/testobject.rb
+ - bundle exec ruby -Ilib test/testpow.rb
+ - bundle exec ruby -Ilib test/testrandom.rb
+ - bundle exec ruby -Ilib test/testreverse.rb
+ - bundle exec ruby -Ilib test/testround.rb
+ - bundle exec ruby -Ilib test/testsort.rb
+ - bundle exec ruby -Ilib test/teststr.rb
+ - bundle exec ruby -Ilib test/testtrans.rb
+ - bundle exec ruby -Ilib test/testwhere.rb
+
