@@ -775,10 +775,10 @@ print <<EOM
 
 
 /* Initialization of NMath module */
-void Init_nmath(void)
+void Init_nmath(VALUE mNumRu)
 {
   /* define ExtMath module */
-  rb_mNMath = rb_define_module("NMath");
+  rb_mNMath = rb_define_module_under(mNumRu, "NMath");
 
   /* methods */
 EOM
