@@ -33,6 +33,12 @@ test "a.sort_index(0)",idx=a.sort_index(0)
 test "a[a.sort_index]",a[idx]
 
 print "\n# following will fail...\n"
+
 a = NArray.complex(3,3).random!(100)
 test "a",a
+begin
 test "a.sort",a.sort
+rescue TypeError
+else
+  raise "TypeError is not raised"
+end

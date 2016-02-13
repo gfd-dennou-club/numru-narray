@@ -24,4 +24,9 @@ print "\na[1,[]]  # Empty Array\n #=> "
 
 print "\nFollowing will fail...\n\n"
 print "a[idx,0] #=> \n"
-p a[idx,0]
+begin
+  p a[idx,0]
+rescue IndexError
+else
+  raise "IndexError is not raised"
+end

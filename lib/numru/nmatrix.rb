@@ -10,70 +10,70 @@ class NumRu::NMatrix < NumRu::NArray
 
   def +(other)
     case other
-    when NMatrix
-      return super(NArray.refer(other))
-    when NArray
-      unless other.instance_of?(NArray)
+    when NumRu::NMatrix
+      return super(NumRu::NArray.refer(other))
+    when NumRu::NArray
+      unless other.instance_of?(NumRu::NArray)
         return other.coerce_rev( self, :+ )
       end
     end
-    raise TypeError,"Illegal operation: NMatrix + %s" % other.class
+    raise TypeError,"Illegal operation: NumRu::NMatrix + %s" % other.class
   end
 
   def -(other)
     case other
-    when NMatrix
-      return super(NArray.refer(other))
-    when NArray
-      unless other.instance_of?(NArray)
+    when NumRu::NMatrix
+      return super(NumRu::NArray.refer(other))
+    when NumRu::NArray
+      unless other.instance_of?(NumRu::NArray)
         return other.coerce_rev( self, :- )
       end
     end
-    raise TypeError,"Illegal operation: NMatrix - %s" % other.class
+    raise TypeError,"Illegal operation: NumRu::NMatrix - %s" % other.class
   end
 
   def *(other)
     case other
-    when NMatrix
-      NMatrix.mul_add( NArray.refer(self).newdim!(0),other.newdim(2), 1 )
-      #NMatrix.mul_add( NArray.refer(self).newdim!(0),
+    when NumRu::NMatrix
+      NumRu::NMatrix.mul_add( NumRu::NArray.refer(self).newdim!(0),other.newdim(2), 1 )
+      #NumRu::NMatrix.mul_add( NumRu::NArray.refer(self).newdim!(0),
       #		       other.transpose(1,0).newdim!(2), 0 )
-    when NVector
-      NVector.mul_add( NArray.refer(self), other.newdim(1), 0 )
-    when NArray
-      if other.instance_of?(NArray)
-	NMatrix.mul( NArray.refer(self), other.newdim(0,0) )
+    when NumRu::NVector
+      NumRu::NVector.mul_add( NumRu::NArray.refer(self), other.newdim(1), 0 )
+    when NumRu::NArray
+      if other.instance_of?(NumRu::NArray)
+	NumRu::NMatrix.mul( NumRu::NArray.refer(self), other.newdim(0,0) )
       else
 	other.coerce_rev( self, :* )
       end
     when Numeric
       super
-      #NMatrix.mul( NArray.refer(self), other )
+      #NumRu::NMatrix.mul( NumRu::NArray.refer(self), other )
     when Array
-      NMatrix.mul( self, NArray[*other].newdim!(0,0) )
+      NumRu::NMatrix.mul( self, NumRu::NArray[*other].newdim!(0,0) )
     else
-      raise TypeError,"Illegal operation: NMatrix * %s" % other.class
+      raise TypeError,"Illegal operation: NumRu::NMatrix * %s" % other.class
     end
   end
 
   def /(other)
     case other
-    when NMatrix
+    when NumRu::NMatrix
       other.lu.solve(self)
-    when NVector
-      raise TypeError,"Illegal operation: NMatrix / %s" % other.class
-    when NArray
-      if other.instance_of?(NArray)
-	NMatrix.div( NArray.refer(self), other.newdim(0,0) )
+    when NumRu::NVector
+      raise TypeError,"Illegal operation: NumRu::NMatrix / %s" % other.class
+    when NumRu::NArray
+      if other.instance_of?(NumRu::NArray)
+	NumRu::NMatrix.div( NumRu::NArray.refer(self), other.newdim(0,0) )
       else
 	other.coerce_rev( self, :/ )
       end
     when Numeric
-      NMatrix.div( NArray.refer(self), other )
+      NumRu::NMatrix.div( NumRu::NArray.refer(self), other )
     when Array
-      NMatrix.div( self, NArray[*other].newdim!(0,0) )
+      NumRu::NMatrix.div( self, NumRu::NArray[*other].newdim!(0,0) )
     else
-      raise TypeError,"Illegal operation: NMatrix / %s" % other.class
+      raise TypeError,"Illegal operation: NumRu::NMatrix / %s" % other.class
     end
   end
 
@@ -91,33 +91,33 @@ class NumRu::NMatrix < NumRu::NArray
       (2..n).each{ m *= self }
       m
     else
-      raise TypeError,"Illegal operation: NMatrix ** %s" % other.class
+      raise TypeError,"Illegal operation: NumRu::NMatrix ** %s" % other.class
     end
   end
 
   def coerce_rev(other,id)
     case id
     when :*
-	if other.instance_of?(NArray)
-	  return NMatrix.mul( other.newdim(0,0), self )
+	if other.instance_of?(NumRu::NArray)
+	  return NumRu::NMatrix.mul( other.newdim(0,0), self )
 	end
-	if other.instance_of?(NArrayScalar)
-	  return NMatrix.mul( other.newdim(0), self )
+	if other.instance_of?(NumRu::NArrayScalar)
+	  return NumRu::NMatrix.mul( other.newdim(0), self )
 	end
     when :/
-	if other.instance_of?(NArray)
-	  return NMatrix.mul( other.newdim(0,0), self.inverse )
+	if other.instance_of?(NumRu::NArray)
+	  return NumRu::NMatrix.mul( other.newdim(0,0), self.inverse )
 	end
-	if other.instance_of?(NArrayScalar)
-	  return NMatrix.mul( other.newdim(0), self.inverse )
+	if other.instance_of?(NumRu::NArrayScalar)
+	  return NumRu::NMatrix.mul( other.newdim(0), self.inverse )
 	end
     end
-    raise TypeError,"Illegal operation: %s %s NMatrix" %
+    raise TypeError,"Illegal operation: %s %s NumRu::NMatrix" %
       [other.class, id.id2name]
   end
 
   def inverse
-    self.lu.solve( NMatrix.new(self.typecode, *self.shape).fill!(0).unit )
+    self.lu.solve( NumRu::NMatrix.new(self.typecode, *self.shape).fill!(0).unit )
   end
 
   def transpose(*arg)
@@ -130,12 +130,12 @@ class NumRu::NMatrix < NumRu::NArray
 
   def diagonal!(val=1)
     shp = self.shape
-    idx = NArray.int(shp[0..1].min).indgen! * (shp[0]+1)
+    idx = NumRu::NArray.int(shp[0..1].min).indgen! * (shp[0]+1)
     ref = reshape(shp[0]*shp[1],true)
     if val.kind_of?(Numeric)
       ref[idx,true] = val
     else
-      val = NArray.to_na(val)
+      val = NumRu::NArray.to_na(val)
       raise ArgumentError, "must be 1-d array" if val.dim!=1
       ref[idx,true] = val.newdim!(-1)
     end
@@ -152,74 +152,74 @@ class NumRu::NMatrix < NumRu::NArray
   alias identity unit
   alias I unit
 
-end # class NMatrix
+end # class NumRu::NMatrix
 
 
 #
-# ------ NVector ------
+# ------ NumRu::NVector ------
 #
 class NumRu::NVector < NumRu::NArray
   CLASS_DIMENSION = 1
 
   def +(other)
     case other
-    when NVector
-      return super(NArray.refer(other))
-    when NArray
-      unless other.instance_of?(NArray)
+    when NumRu::NVector
+      return super(NumRu::NArray.refer(other))
+    when NumRu::NArray
+      unless other.instance_of?(NumRu::NArray)
         return other.coerce_rev( self, :+ )
       end
     end
-    raise TypeError,"Illegal operation: NVector + %s" % other.class
+    raise TypeError,"Illegal operation: NumRu::NVector + %s" % other.class
   end
 
   def -(other)
     case other
-    when NVector
-      return super(NArray.refer(other))
-    when NArray
-      unless other.instance_of?(NArray)
+    when NumRu::NVector
+      return super(NumRu::NArray.refer(other))
+    when NumRu::NArray
+      unless other.instance_of?(NumRu::NArray)
         return other.coerce_rev( self, :- )
       end
     end
-    raise TypeError,"Illegal operation: NVector - %s" % other.class
+    raise TypeError,"Illegal operation: NumRu::NVector - %s" % other.class
   end
 
   def *(other)
     case other
-    when NMatrix
-      NVector.mul_add( NArray.refer(self).newdim!(0), other, 1 )
-    when NVector
-      NArray.mul_add( NArray.refer(self), other, 0 ) # inner product
-    when NArray
-      if other.instance_of?(NArray)
-	NVector.mul( NArray.refer(self), other.newdim(0) )
+    when NumRu::NMatrix
+      NumRu::NVector.mul_add( NumRu::NArray.refer(self).newdim!(0), other, 1 )
+    when NumRu::NVector
+      NumRu::NArray.mul_add( NumRu::NArray.refer(self), other, 0 ) # inner product
+    when NumRu::NArray
+      if other.instance_of?(NumRu::NArray)
+	NumRu::NVector.mul( NumRu::NArray.refer(self), other.newdim(0) )
       else
 	other.coerce_rev( self, :* )
       end
     when Numeric
-      NVector.mul( NArray.refer(self), other )
+      NumRu::NVector.mul( NumRu::NArray.refer(self), other )
     else
-      raise TypeError,"Illegal operation: NVector * %s" % other.class
+      raise TypeError,"Illegal operation: NumRu::NVector * %s" % other.class
     end
   end
 
   def /(other)
     case other
-    when NMatrix
+    when NumRu::NMatrix
       other.lu.solve(self)
-    when NVector
-      raise TypeError,"Illegal operation: NVector / %s" % other.class
-    when NArray
-      if other.instance_of?(NArray)
-	NVector.div( NArray.refer(self), other.newdim(0) )
+    when NumRu::NVector
+      raise TypeError,"Illegal operation: NumRu::NVector / %s" % other.class
+    when NumRu::NArray
+      if other.instance_of?(NumRu::NArray)
+	NumRu::NVector.div( NumRu::NArray.refer(self), other.newdim(0) )
       else
 	other.coerce_rev( self, :/ )
       end
     when Numeric
-      NVector.div( NArray.refer(self), other )
+      NumRu::NVector.div( NumRu::NArray.refer(self), other )
     else
-      raise TypeError,"Illegal operation: NVector / %s" % other.class
+      raise TypeError,"Illegal operation: NumRu::NVector / %s" % other.class
     end
   end
 
@@ -234,15 +234,15 @@ class NumRu::NVector < NumRu::NArray
   def coerce_rev(other,id)
     case id
     when :*
-	if other.instance_of?(NArray)
-	  return NVector.mul( other.newdim(0), self )
+	if other.instance_of?(NumRu::NArray)
+	  return NumRu::NVector.mul( other.newdim(0), self )
 	end
-	if other.instance_of?(NArrayScalar)
-	  return NVector.mul( other, self )
+	if other.instance_of?(NumRu::NArrayScalar)
+	  return NumRu::NVector.mul( other, self )
 	end
     end
-    raise TypeError,"Illegal operation: %s %s NVector" %
+    raise TypeError,"Illegal operation: %s %s NumRu::NVector" %
       [other.class, id.id2name]
   end
 
-end # class NVector
+end # class NumRu::NVector

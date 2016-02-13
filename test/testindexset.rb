@@ -37,20 +37,40 @@ b=a.dup; b[true,true] = [[100,101,102]]
 p b
 
 
-print "\nFollowing will fail ...\n"
+print "\nFollowing will fail ...\n\n"
 
-print "\na[true,1] = [[100,101,102]] \na #=> ";
+print "a[true,1] = [[100,101,102]] \na #=> \n";
+begin
 b=a.dup; b[true,1] = [[100,101,102]]
 p b
+rescue IndexError
+else
+  raise "IndexError is not raised"
+end
 
-print "\na[true,1] = [[100],[101],[102]] \na #=> ";
+begin
+print "a[true,1] = [[100],[101],[102]] \na #=> \n";
 b=a.dup; b[true,1] = [[100],[101],[102]]
 p b
+rescue IndexError
+else
+  raise "IndexError is not raised"
+end
 
-print "\na[true,true] = [100,101,102] \na #=> ";
+begin
+print "a[true,true] = [100,101,102] \na #=> \n";
 b=a.dup; b[true,true] = [100,101,102]
 p b
+rescue IndexError
+else
+  raise "IndexError is not raised"
+end
 
-print "\na[1,0] = [100,101,102] \na #=> ";
+begin
+print "a[1,0] = [100,101,102] \na #=> \n";
 b=a.dup; b[1,0] = [100,101,102]
 p b
+rescue IndexError
+else
+  raise "IndexError is not raised"
+end

@@ -10,11 +10,11 @@ class NumRu::NArray
 
   def self.cast(array,type=nil)
     case array
-    when NArray
+    when NumRu::NArray
     when Array
-      array = NArray.to_na(array)
+      array = NumRu::NArray.to_na(array)
     else
-      raise ArgumentError, "1st argument must be NArray or Array"
+      raise ArgumentError, "1st argument must be NumRu::NArray or Array"
     end
     type = array.typecode if type.nil?
     shape = array.shape
@@ -24,13 +24,13 @@ class NumRu::NArray
   end
 
   def integer?
-    self.typecode==NArray::BYTE ||
-    self.typecode==NArray::SINT ||
-    self.typecode==NArray::LINT
+    self.typecode==NumRu::NArray::BYTE ||
+    self.typecode==NumRu::NArray::SINT ||
+    self.typecode==NumRu::NArray::LINT
   end
   def complex?
-    self.typecode==NArray::DCOMPLEX ||
-    self.typecode==NArray::SCOMPLEX
+    self.typecode==NumRu::NArray::DCOMPLEX ||
+    self.typecode==NumRu::NArray::SCOMPLEX
   end
 
   def all?
@@ -46,7 +46,7 @@ class NumRu::NArray
   end
 
   def ==(other)
-    other.kind_of?(NArray) &&
+    other.kind_of?(NumRu::NArray) &&
       shape == other.shape && 
       eq(other).all?
   end
@@ -56,7 +56,7 @@ class NumRu::NArray
       typecode == other.typecode &&
       shape == other.shape &&
       case typecode
-      when NArray::OBJECT
+      when NumRu::NArray::OBJECT
 	to_a.eql? other.to_a
       else
 	to_s.eql? other.to_s
@@ -65,7 +65,7 @@ class NumRu::NArray
 
   def hash
     case typecode
-    when NArray::OBJECT
+    when NumRu::NArray::OBJECT
       [self.class, to_a].hash
     else
       [self.class, typecode, shape, to_s].hash
@@ -130,56 +130,56 @@ class NumRu::NArray
 # Statistics
   def mean(*ranks)
     if integer?
-      a = self.to_type(NArray::DFLOAT)
+      a = self.to_type(NumRu::NArray::DFLOAT)
     else
       a = self
     end
-    a = NArray.ref(a)
+    a = NumRu::NArray.ref(a)
     a.sum(*ranks) / (rank_total(*ranks))
   end
 
   def stddev(*ranks)
     if integer?
-      a = self.to_type(NArray::DFLOAT)
+      a = self.to_type(NumRu::NArray::DFLOAT)
     else
       a = self
     end
-    a = NArray.ref(a)
+    a = NumRu::NArray.ref(a)
     n = rank_total(*ranks)
     if complex?
-      NMath::sqrt( (( a-a.accum(*ranks).div!(n) ).abs**2).sum(*ranks)/(n-1) )
+      NumRu::NMath::sqrt( (( a-a.accum(*ranks).div!(n) ).abs**2).sum(*ranks)/(n-1) )
     else
-      NMath::sqrt( (( a-a.accum(*ranks).div!(n) )**2).sum(*ranks)/(n-1) )
+      NumRu::NMath::sqrt( (( a-a.accum(*ranks).div!(n) )**2).sum(*ranks)/(n-1) )
     end
   end
 
   def rms(*ranks)
     if integer?
-      a = self.to_type(NArray::DFLOAT)
+      a = self.to_type(NumRu::NArray::DFLOAT)
     else
       a = self
     end
-    a = NArray.ref(a)
+    a = NumRu::NArray.ref(a)
     n = rank_total(*ranks)
     if complex?
-      NMath::sqrt( (a.abs**2).sum(*ranks)/n )
+      NumRu::NMath::sqrt( (a.abs**2).sum(*ranks)/n )
     else
-      NMath::sqrt( (a**2).sum(*ranks)/n )
+      NumRu::NMath::sqrt( (a**2).sum(*ranks)/n )
     end
   end
 
   def rmsdev(*ranks)
     if integer?
-      a = self.to_type(NArray::DFLOAT)
+      a = self.to_type(NumRu::NArray::DFLOAT)
     else
       a = self
     end
-    a = NArray.ref(a)
+    a = NumRu::NArray.ref(a)
     n = rank_total(*ranks)
     if complex?
-      NMath::sqrt( (( a-a.accum(*ranks).div!(n) ).abs**2).sum(*ranks)/n )
+      NumRu::NMath::sqrt( (( a-a.accum(*ranks).div!(n) ).abs**2).sum(*ranks)/n )
     else
-      NMath::sqrt( (( a-a.accum(*ranks).div!(n) )**2).sum(*ranks)/n )
+      NumRu::NMath::sqrt( (( a-a.accum(*ranks).div!(n) )**2).sum(*ranks)/n )
     end
   end
 
@@ -205,16 +205,16 @@ class NumRu::NArray
     when FLOAT
     when SFLOAT
     else
-      raise TypeError, "NArray type must be (S)FLOAT or (S)COMPLEX."
+      raise TypeError, "NumRu::NArray type must be (S)FLOAT or (S)COMPLEX."
     end
-    rr = NArray.new(type,size)
-    xx = NArray.new(type,size)
+    rr = NumRu::NArray.new(type,size)
+    xx = NumRu::NArray.new(type,size)
     i = 0
     while i < size
       n = size-i
       m = ((n+Math::sqrt(n))*1.27).to_i
-      x = NArray.new(type,m).random!(1) * 2 - 1
-      y = NArray.new(type,m).random!(1) * 2 - 1
+      x = NumRu::NArray.new(type,m).random!(1) * 2 - 1
+      y = NumRu::NArray.new(type,m).random!(1) * 2 - 1
       r = x**2 + y**2
       idx = (r<1).where
       idx = idx[0...n] if idx.size > n
@@ -225,7 +225,7 @@ class NumRu::NArray
       end
     end
     # Box-Muller transform
-    rr = ( xx * NMath::sqrt( -2 * NMath::log(rr) / rr ) )
+    rr = ( xx * NumRu::NMath::sqrt( -2 * NumRu::NMath::log(rr) / rr ) )
     # finish
     rr.reshape!(*self.shape) if self.rank > 1
     rr = rr.to_type(self.typecode) if type!=self.typecode
@@ -278,7 +278,7 @@ class NumRu::NArray
     end
   end
 
-  #SFloatOne = NArray.sfloat(1).fill!(1)
+  #SFloatOne = NumRu::NArray.sfloat(1).fill!(1)
 end
 
 
@@ -332,10 +332,10 @@ module NumRu::NMath
 
 # Statistics
   def covariance(x,y,*ranks)
-    x = NArray.to_na(x) unless x.kind_of?(NArray)
-    x = x.to_type(NArray::DFLOAT) if x.integer?
-    y = NArray.to_na(y) unless y.kind_of?(NArray)
-    y = y.to_type(NArray::DFLOAT) if y.integer?
+    x = NumRu::NArray.to_na(x) unless x.kind_of?(NumRu::NArray)
+    x = x.to_type(NumRu::NArray::DFLOAT) if x.integer?
+    y = NumRu::NArray.to_na(y) unless y.kind_of?(NumRu::NArray)
+    y = y.to_type(NumRu::NArray::DFLOAT) if y.integer?
     n = x.rank_total(*ranks)
     xm = x.accum(*ranks).div!(n)
     ym = y.accum(*ranks).div!(n)
