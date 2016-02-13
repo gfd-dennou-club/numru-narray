@@ -1,4 +1,5 @@
 require 'numru/narray'
+include NumRu
 
 a = NArray.new(NArray::DFLOAT,5,5).indgen!
 print "a #=> "; p a

@@ -1,4 +1,5 @@
 require 'numru/narray'
+include NumRu
 
 def test a
   print a," #=> "

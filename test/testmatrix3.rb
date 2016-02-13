@@ -1,4 +1,5 @@
 require 'numru/narray'
+include NumRu
 require 'rational'
 
 #class Rational

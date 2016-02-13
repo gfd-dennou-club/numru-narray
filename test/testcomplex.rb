@@ -1,4 +1,5 @@
 require 'numru/narray'
+include NumRu
 
 def testop(a,b)
   print "a = "; p a

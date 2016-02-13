@@ -1,4 +1,5 @@
-require "numru/narray"
+require 'numru/narray'
+include NumRu
 include NMath
 
 x = NArray[65, 63, 67, 64, 68, 62, 70, 66, 68, 67, 69, 71]

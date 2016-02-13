@@ -1,4 +1,5 @@
 require 'numru/narray'
+include NumRu
 
 def px(a)
   puts a

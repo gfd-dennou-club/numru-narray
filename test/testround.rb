@@ -1,4 +1,5 @@
 require 'numru/narray'
+include NumRu
 
 def testround a
   print "a = ";  p a

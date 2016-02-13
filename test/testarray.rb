@@ -1,4 +1,5 @@
 require 'numru/narray'
+include NumRu
 
 a = NArray.float(3,3).indgen
 

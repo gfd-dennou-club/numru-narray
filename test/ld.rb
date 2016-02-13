@@ -8,4 +8,5 @@ begin
 rescue
 end
 
-require "numru/narray"
+require 'numru/narray'
+include NumRu

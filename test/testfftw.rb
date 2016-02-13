@@ -1,4 +1,5 @@
 require 'numru/narray'
+include NumRu
 
 x = NArray.complex(1024,1024).indgen!
 

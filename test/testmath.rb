@@ -1,4 +1,5 @@
 require 'numru/narray'
+include NumRu
 include NMath
 
 def pr x

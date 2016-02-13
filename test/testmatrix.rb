@@ -1,4 +1,5 @@
-require "numru/narray"
+require 'numru/narray'
+include NumRu
 
 m = NMatrix.float(3,3,3).indgen!
 
