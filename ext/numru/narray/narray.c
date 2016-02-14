@@ -666,7 +666,14 @@ static VALUE
   GetNArray(self,ary);
   if (NA_IsROBJ(ary))
     rb_raise(rb_eTypeError,"cannot convert object-type NArray");
+#if RUBY_API_VERSION_CODE >= 20200
   str = rb_str_new_static(ary->ptr,ary->total*na_sizeof[ary->type]);
+  RB_OBJ_WRITE(str, &RSTRING(str)->as.heap.aux.shared, self);
+  RB_FL_SET(str, ELTS_SHARED);
+#else
+  str = rb_str_new(ary->ptr,ary->total*na_sizeof[ary->type]);
+  rb_warn("to_s is used for ruby < 2.2");
+#endif
   return rb_obj_freeze(str);
 }
 
