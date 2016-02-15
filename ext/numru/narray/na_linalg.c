@@ -375,7 +375,7 @@ na_lu_solve_func_body( int ni,
   na_shape_t i,k;
   na_funcset_t *f = &na_funcset[type];
   na_shape_t n = shape[1];
-  int sz = na_sizeof[type];
+  na_shape_t sz = (na_shape_t) na_sizeof[type];
   na_shape_t xsz = shape[0] * sz;
   na_shape_t rowsz = sz * n;
   na_shape_t matsz = rowsz * n;
