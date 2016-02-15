@@ -1,4 +1,6 @@
 require 'numru/narray'
+include NumRu
+
 T = (RUBY_VERSION<"1.8.0") ? Time : Process
 
 TYPE   = ARGV[0]
