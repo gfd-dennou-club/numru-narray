@@ -1,5 +1,13 @@
 2016-02-15 Seiya Nishizawa <seiya@gfd-dennou.org>
 
+	* fixed wrong path for the C extension
+
+2016-02-15 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* update version
+
+2016-02-15 Seiya Nishizawa <seiya@gfd-dennou.org>
+
 	* fixed wrong integer type in the lu solver
 
 2016-02-15 Seiya Nishizawa <seiya@gfd-dennou.org>
