@@ -678,7 +678,7 @@ static VALUE
   }
   OBJSETUP(str, rb_cString, T_STRING);
   FL_SET(str, FL_USER1);
-  RBASIC(str)->flags & ~RSTRING_EMBED_LEN_MASK;
+  RBASIC(str)->flags &= ~RSTRING_EMBED_LEN_MASK;
   RBASIC(str)->flags |= (0L << RSTRING_EMBED_LEN_SHIFT);
   RSTRING(str)->as.heap.len = ary->total*na_sizeof[ary->type];
   RSTRING(str)->as.heap.ptr = ary->ptr;

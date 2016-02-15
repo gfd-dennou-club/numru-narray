@@ -381,6 +381,7 @@ static int
   else
     rb_raise(rb_eRuntimeError, "Array size mismatch: %zd != %zd at %i-th dim",
 	     ary_sz, itr_sz, i);
+  return -1;
 }
 
 
@@ -1035,7 +1036,7 @@ static int
       r = NUM2SHAPE(v);
       if (r<0) r += rankc;     /* negative for from end */
       if (r<0 || r>=rankc)
-        rb_raise(rb_eArgError, "rank %ld out of range", r);
+        rb_raise(rb_eArgError, "rank %zd out of range", r);
       if (flag)
 	rankv[c] = r;
       else
