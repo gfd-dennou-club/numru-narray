@@ -1,3 +1,59 @@
+2016-02-15 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* fixed wrong integer type in the lu solver
+
+2016-02-15 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* fixed wrong type
+
+2016-02-15 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* add "include NumRu" to the benchmark scripts
+
+2016-02-15 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* enable #to_s_refer for ruby >= 1.9
+
+2016-02-14 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* use #to_s for #to_s_refer for ruby < 2.2
+
+2016-02-13 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* update README
+
+2016-02-13 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* update mkmath.rb (na_math.c was overwrited)
+
+2016-02-13 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* update tests
+
+2016-02-13 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* add "include NumRu" to the test files
+
+2016-02-13 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* add Gemfile file
+
+2016-02-13 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* add travis setting
+
+2016-02-13 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* add NumRu::NArray#to_s_refer method (same as #to_s but not dup data)
+
+2016-02-12 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* remove narray.gemspec
+
+2016-02-12 Seiya Nishizawa <seiya@gfd-dennou.org>
+
+	* update ChangeLog
+
 2016-02-12 Seiya Nishizawa <seiya@gfd-dennou.org>
 
 	* update version
