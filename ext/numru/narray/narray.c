@@ -10,6 +10,7 @@
 */
 #define NARRAY_C
 #include <ruby.h>
+#include "ruby/version.h"
 #include "narray.h"
 #include "narray_local.h"
 
@@ -669,10 +670,24 @@ static VALUE
 #if RUBY_API_VERSION_CODE >= 20200
   str = rb_str_new_static(ary->ptr,ary->total*na_sizeof[ary->type]);
   RB_OBJ_WRITE(str, &RSTRING(str)->as.heap.aux.shared, self);
-  RB_FL_SET(str, ELTS_SHARED);
+  FL_SET(str, ELTS_SHARED);
+#elif RUBY_API_VERSION_CODE >= 10900
+  {
+  NEWOBJ(rstr, struct RString);
+  str = (VALUE)rstr;
+  }
+  OBJSETUP(str, rb_cString, T_STRING);
+  FL_SET(str, FL_USER1);
+  RBASIC(str)->flags & ~RSTRING_EMBED_LEN_MASK;
+  RBASIC(str)->flags |= (0L << RSTRING_EMBED_LEN_SHIFT);
+  RSTRING(str)->as.heap.len = ary->total*na_sizeof[ary->type];
+  RSTRING(str)->as.heap.ptr = ary->ptr;
+  RSTRING(str)->as.heap.aux.capa = RSTRING(str)->as.heap.len;
+  RSTRING(str)->as.heap.aux.shared = self;
+  FL_SET(str, ELTS_SHARED);
 #else
   str = rb_str_new(ary->ptr,ary->total*na_sizeof[ary->type]);
-  rb_warn("to_s is used for ruby < 2.2");
+  rb_warn("#to_s is used for #to_s_refer for ruby < 1.9 (%d.%d.%d)", RUBY_API_VERSION_MAJOR, RUBY_API_VERSION_MINOR, RUBY_API_VERSION_TEENY);
 #endif
   return rb_obj_freeze(str);
 }
