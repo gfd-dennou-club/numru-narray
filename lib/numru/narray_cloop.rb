@@ -27,6 +27,7 @@ module NumRu
       args = []
       @@loop = Array.new
       @@omp = false
+      @@idxmax = 0
       ars = arys.map do |ary|
         na += 1
         vn = "v#{na}"
@@ -47,6 +48,9 @@ EOF
       ars.each_with_index do |ary,i|
         ctype = ary.ctype
         code << "  #{ctype} v#{i} = NA_PTR_TYPE(rb_v#{i}, #{ctype});\n"
+      end
+      @@idxmax.times do |i|
+        code << "  int i#{i};\n"
       end
       code << @@body
       code << <<EOF
@@ -98,10 +102,11 @@ EOF
     def self.cloop(min, max, openmp=false)
       @@omp ||= openmp
       i = @@loop.length
+      @@idxmax = [@@idxmax, i+1].max
       idx = NArrayCLoop::Index.new(i, min, max)
       @@body << "#pragma omp parallel for\n" if openmp
       @@body << "  "*(i+1)
-      @@body << "for (int i#{i}=#{min}; i#{i}<=#{max}; i#{i}++) {\n"
+      @@body << "for (i#{i}=#{min}; i#{i}<=#{max}; i#{i}++) {\n"
 
       @@loop.push Array.new
       yield(idx)
