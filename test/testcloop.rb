@@ -2,6 +2,8 @@ require "test/unit"
 require "numru/narray_cloop"
 include NumRu
 
+NumRu::NArrayCLoop.header_path = File.expand_path(File.dirname(__FILE__)) + "/../ext/numru/narray"
+
 #NumRu::NArrayCLoop.verbose = true
 
 class TestCLoop < Test::Unit::TestCase

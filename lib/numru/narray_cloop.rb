@@ -7,6 +7,7 @@ module NumRu
     @@tmpnum = 0
     @@verbose = false
     @@omp_opt = "-fopenmp" # for gcc
+    @@header_path = nil  # path of narray.h
 
     def self.verbose=(bool)
       @@verbose = bool == true
@@ -14,6 +15,10 @@ module NumRu
 
     def self.omp_opt=(opt)
       @@omp_opt = opt
+    end
+
+    def self.header_path=(path)
+      @@header_path = path
     end
 
     def self.kernel(*arys,&block)
@@ -71,8 +76,12 @@ EOF
             file.print extconf(@@tmpnum,@@omp)
           end
           unless system("ruby extconf.rb > log && make >> log")
-            print File.read("log"), "\n"
-            print File.read(fname), "\n"
+            print "LOG:\n"
+            print File.read("log"), "\n\n\n"
+            print "C source:\n"
+            print File.read(fname), "\n\n\n"
+            print "extconf.rb:\n"
+            print File.read("extconf.rb"), "\n\n\n"
             raise("compile error")
           end
           print File.read("log"), "\n" if @@verbose
@@ -105,26 +114,36 @@ EOF
     def self.extconf(tmpnum, omp)
       src = <<EOF
 require "mkmf"
-
+EOF
+      if @@header_path
+        src << <<EOF
+header_path = "#{@@header_path}"
+EOF
+      else
+        src << <<EOF
+require "rubygems"
 gem_path = nil
-begin
-  require "rubygems"
-  if Gem::Specification.respond_to?(:find_by_name)
-    if spec = Gem::Specification.find_by_name("numru-narray")
-      gem_path = spec.full_gem_path
-    end
-  else
-    if spec = Gem.source_index.find_name("numru-narray").any?
-      gem_path = spec.full_gem_path
-    end
+if Gem::Specification.respond_to?(:find_by_name)
+  if spec = Gem::Specification.find_by_name("numru-narray")
+    gem_path = spec.full_gem_path
   end
-  gem_path = File.join(gem_path, "ext", "numru", "narray")
-rescue LoadError
-  dir_config("narray", RbConfig::CONFIG["sitearchdir"])
+else
+  if spec = Gem.source_index.find_name("numru-narray").any?
+    gem_path = spec.full_gem_path
+  end
 end
+unless gem_path
+  raise "gem numru-narray not found"
+end
+header_path = File.join(gem_path, "ext", "numru", "narray")
+EOF
+      end
 
-unless find_header("narray.h", gem_path)
-  find_header("narray.h", File.join(gem_path,"src"))
+      src << <<EOF
+unless find_header("narray.h", header_path)
+  $STDERR.print "narray.h not found\n"
+  $STDERR.print "set path of narray.h to NumRu::NArrayCLoop.header_path\n"
+  raise "narray.h not found"
 end
 EOF
 
