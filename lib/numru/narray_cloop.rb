@@ -142,9 +142,9 @@ EOF
       end
 
       src << <<'EOF'
+find_header("narray_config.h", *([header_path]+Dir["../tmp/*/narray/*"]))
 unless find_header("narray.h", header_path)
-  STDERR.print "narray.h not found in\n"
-  STDERR.print "  #{Dir[header_path+"/*"]}\n\n"
+  STDERR.print "narray.h not found\n"
   STDERR.print "Set path of narray.h to NumRu::NArrayCLoop.header_path\n"
   raise "narray.h not found"
 end
