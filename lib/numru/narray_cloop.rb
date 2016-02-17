@@ -66,7 +66,14 @@ Init_narray_ext_#{@@tmpnum}()
 }
 EOF
 
-      print code if @@verbose
+      sep = "#"*72 + "\n"
+
+      if @@verbose
+        print sep
+        print "# C source\n"
+        print sep
+        print code, "\n"
+      end
 
 #      tmpdir = "tmp"
 #      Dir.mkdir(tmpdir) unless File.exist?(tmpdir)
@@ -80,8 +87,6 @@ EOF
             file.print extconf(@@tmpnum,@@omp)
           end
           unless system("ruby extconf.rb > log 2>&1") && system("make >> log 2>&1")
-            sep = "#"*72 + "\n"
-
             print sep
             print "# LOG (ruby extconf.rb & make)\n"
             print sep
@@ -106,7 +111,21 @@ EOF
             print "\n"
             raise("compile error")
           end
-          print File.read("log"), "\n" if @@verbose
+          if @@verbose
+            print sep
+            print "# compile\n"
+            print sep
+            print File.read("log"), "\n"
+            print sep
+            print "# execute\n"
+            print sep
+            print <<EOF
+require "./narray_ext_#{@@tmpnum}.so"
+NumRu::NArrayCLoop.send("c_func_#{@@tmpnum}", #{(0...arys.length).to_a.map{|i| "v#{i}"}.join(", ")})
+
+EOF
+          end
+
           require "./narray_ext_#{@@tmpnum}.so"
           NumRu::NArrayCLoop.send("c_func_#{@@tmpnum}", *arys)
         end
