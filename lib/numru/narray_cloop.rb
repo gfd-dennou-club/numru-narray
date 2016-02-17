@@ -79,15 +79,31 @@ EOF
           File.open("extconf.rb", "w") do |file|
             file.print extconf(@@tmpnum,@@omp)
           end
-          unless system("ruby extconf.rb > log && make >> log")
-            print "LOG:\n"
-            print File.read("log"), "\n\n\n"
-            print "C source:\n"
-            print File.read(fname), "\n\n\n"
-            print "extconf.rb:\n"
-            print File.read("extconf.rb"), "\n\n\n"
-            print "mkmf.log:\n"
-            print File.read("mkmf.log"), "\n\n\n"
+          unless system("ruby extconf.rb > log 2>&1") && system("make >> log 2>&1")
+            sep = "#"*72 + "\n"
+
+            print sep
+            print "# LOG (ruby extconf.rb & make)\n"
+            print sep
+            print File.read("log"), "\n"
+
+            print sep
+            print "# C source (#{fname})\n"
+            print sep
+            print File.read(fname), "\n"
+
+            print sep
+            print "# extconf.rb\n"
+            print sep
+            print File.read("extconf.rb"), "\n"
+
+            print sep
+            print "# mkmf.log\n"
+            print sep
+            print File.read("mkmf.log"), "\n"
+            print sep
+
+            print "\n"
             raise("compile error")
           end
           print File.read("log"), "\n" if @@verbose
