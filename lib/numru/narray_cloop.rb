@@ -6,7 +6,7 @@ module NumRu
 
     @@tmpnum = 0
     @@verbose = false
-    @@omp_opt = "-fopenmp" # for gcc
+    @@omp_opt = nil
     @@header_path = nil  # path of narray.h
 
     def self.verbose=(bool)
@@ -157,10 +157,25 @@ EOF
 
       # openmp enable
       if omp
-        src << <<EOF
-$CFLAGS << " " << "#{@@omp_opt}"
-$DLDFLAGS << " " << "#{@@omp_opt}"
+        if @@omp_opt
+          omp_opt = @@omp_opt
+        else
+          case RbConfig::CONFIG["CC"]
+          when "gcc"
+            omp_opt = "-fopenmp"
+          else
+            omp_opt = nil
+          end
+        end
+        if omp_opt
+          src << <<EOF
+$CFLAGS << " " << "#{omp_opt}"
+$DLDFLAGS << " " << "#{omp_opt}"
 EOF
+        else
+          warn "openmp is disabled (Set compiler option for OpenMP to NArrayCLoop.omp_opt"
+          warn "openmp is disabled"
+        end
       end
 
       src << <<EOF
