@@ -35,4 +35,5 @@ script:
  - bundle exec ruby -Ilib test/teststr.rb
  - bundle exec ruby -Ilib test/testtrans.rb
  - bundle exec ruby -Ilib test/testwhere.rb
+ - bundle exec ruby -Ilib test/testcloop.rb
 
