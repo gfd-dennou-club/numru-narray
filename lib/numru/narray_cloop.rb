@@ -82,6 +82,8 @@ EOF
             print File.read(fname), "\n\n\n"
             print "extconf.rb:\n"
             print File.read("extconf.rb"), "\n\n\n"
+            print "mkmf.log:\n"
+            print File.read("mkmf.log"), "\n\n\n"
             raise("compile error")
           end
           print File.read("log"), "\n" if @@verbose
@@ -139,10 +141,11 @@ header_path = File.join(gem_path, "ext", "numru", "narray")
 EOF
       end
 
-      src << <<EOF
+      src << <<'EOF'
 unless find_header("narray.h", header_path)
-  $STDERR.print "narray.h not found\n"
-  $STDERR.print "set path of narray.h to NumRu::NArrayCLoop.header_path\n"
+  STDERR.print "narray.h not found in\n"
+  STDERR.print "  #{Dir[header_path+"/*"]}\n\n"
+  STDERR.print "Set path of narray.h to NumRu::NArrayCLoop.header_path\n"
   raise "narray.h not found"
 end
 EOF
