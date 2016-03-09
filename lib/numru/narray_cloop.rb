@@ -552,7 +552,7 @@ EOF
         ["or", "||"]
       ].each do |m, op|
         eval <<EOF
-      def c_#{m}(other)
+      def #{m}(other)
         self.class.new("(\#{@cond}) #{op} (\#{other})")
       end
 EOF

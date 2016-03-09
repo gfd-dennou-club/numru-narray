@@ -256,7 +256,7 @@ class TestCLoop < Test::Unit::TestCase
     NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
       c_loop(0,M-1) do |j|
         c_loop(0,N-1) do |i|
-          c_if( (j < 50).c_and(x[i,j] < 100) ) do
+          c_if( (j < 50).and(x[i,j] < 100) ) do
             z[i,j] = x[i,j] + y[i,j]
           end
         end
