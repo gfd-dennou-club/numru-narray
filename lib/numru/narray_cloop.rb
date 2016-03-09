@@ -1,5 +1,6 @@
 require "numru/narray"
 require "tmpdir"
+require "erb"
 
 module NumRu
   module NArrayCLoop
@@ -37,38 +38,12 @@ module NumRu
       end
       @@body = ""
       self.module_exec(*ars,&block)
+
       tmpnum = 0
       func_name = "rb_narray_ext_#{@@tmpnum}"
-      code = <<EOF
-#include "ruby.h"
-#include "narray.h"
-
-VALUE
-#{func_name}(VALUE self, VALUE rb_#{args.join(", VALUE rb_")}) {
-EOF
-      ars.each_with_index do |ary,i|
-        ctype = ary.ctype
-        code << "  #{ctype} v#{i} = NA_PTR_TYPE(rb_v#{i}, #{ctype});\n"
-      end
-      @@idxmax.times do |i|
-        code << "  int i#{i};\n"
-      end
-      code << @@body
-      code << <<EOF
-  return Qnil;
-}
-
-void
-Init_narray_ext_#{@@tmpnum}()
-{
-  VALUE mNumRu = rb_define_module("NumRu");
-  VALUE mNArrayCLoop = rb_define_module_under(mNumRu, "NArrayCLoop");
-  rb_define_module_function(mNArrayCLoop, "c_func_#{@@tmpnum}", #{func_name}, #{ars.length});
-}
-EOF
+      code = TEMPL_ccode.result(binding)
 
       sep = "#"*72 + "\n"
-
       if @@verbose
         print sep
         print "# C source\n"
@@ -76,6 +51,7 @@ EOF
         print code, "\n"
       end
 
+      # save file and compile
 #      tmpdir = "tmp"
 #      Dir.mkdir(tmpdir) unless File.exist?(tmpdir)
       Dir.mktmpdir(nil, ".") do |tmpdir|
@@ -84,50 +60,37 @@ EOF
           File.open(fname, "w") do |file|
             file.print code
           end
+          extconf = TEMPL_extconf.result(binding)
           File.open("extconf.rb", "w") do |file|
-            file.print extconf(@@tmpnum,@@omp)
+            file.print extconf
           end
           unless system("ruby extconf.rb > log 2>&1")
-            print sep
-            print "# LOG (ruby extconf.rb)\n"
-            print sep
-            print File.read("log"), "\n"
+            print sep, "# LOG (ruby extconf.rb)\n"
+            print sep, File.read("log"), "\n"
 
-            print sep
-            print "# extconf.rb\n"
-            print sep
-            print File.read("extconf.rb"), "\n"
+            print sep, "# extconf.rb\n"
+            print sep, extconf, "\n"
 
-            print sep
-            print "# mkmf.log\n"
-            print sep
-            print File.read("mkmf.log"), "\n"
-            print sep
+            print sep, "# mkmf.log\n"
+            print sep, File.read("mkmf.log"), "\n"
 
-            print "\n"
+            print sep, "\n"
             raise("extconf error")
           end
           unless system("make > log 2>&1")
-            print sep
-            print "# LOG (make)\n"
-            print sep
-            print File.read("log"), "\n"
+            print sep, "# LOG (make)\n"
+            print sep, File.read("log"), "\n"
 
-            print sep
-            print "# C source (#{fname})\n"
-            print sep
-            print File.read(fname), "\n"
+            print sep, "# C source (#{fname})\n"
+            print sep, File.read(fname), "\n"
 
             print "\n"
             raise("compile error")
           end
           if @@verbose
-            print sep
-            print "# compile\n"
-            print sep
-            print File.read("log"), "\n"
-            print sep
-            print "# execute\n"
+            print sep, "# compile\n"
+            print sep, File.read("log"), "\n"
+            print sep, "# execute\n"
             print sep
             print <<EOF
 require "./narray_ext_#{@@tmpnum}.so"
@@ -136,6 +99,7 @@ NumRu::NArrayCLoop.send("c_func_#{@@tmpnum}", #{(0...arys.length).to_a.map{|i| "
 EOF
           end
 
+          # execute
           require "./narray_ext_#{@@tmpnum}.so"
           NumRu::NArrayCLoop.send("c_func_#{@@tmpnum}", *arys)
         end
@@ -143,6 +107,7 @@ EOF
 
       return nil
     end
+
 
     def self.c_loop(min, max, openmp=false)
       @@omp ||= openmp
@@ -183,73 +148,6 @@ EOF
         @@body << ";\n"
       end
       @@body << "  "*(i+1)+"}\n"
-    end
-
-
-    def self.extconf(tmpnum, omp)
-      src = <<EOF
-require "mkmf"
-EOF
-      if @@header_path
-        src << <<EOF
-header_path = "#{@@header_path}"
-EOF
-      else
-        src << <<EOF
-require "rubygems"
-gem_path = nil
-if Gem::Specification.respond_to?(:find_by_name)
-  if spec = Gem::Specification.find_by_name("numru-narray")
-    gem_path = spec.full_gem_path
-  end
-else
-  if spec = Gem.source_index.find_name("numru-narray").any?
-    gem_path = spec.full_gem_path
-  end
-end
-unless gem_path
-  raise "gem numru-narray not found"
-end
-header_path = File.join(gem_path, "ext", "numru", "narray")
-EOF
-      end
-
-      src << <<'EOF'
-find_header("narray_config.h", *([header_path]+Dir["../tmp/*/narray/*"]))
-unless find_header("narray.h", header_path)
-  STDERR.print "narray.h not found\n"
-  STDERR.print "Set path of narray.h to NumRu::NArrayCLoop.header_path\n"
-  raise "narray.h not found"
-end
-EOF
-
-      # openmp enable
-      if omp
-        if @@omp_opt
-          omp_opt = @@omp_opt
-        else
-          case RbConfig::CONFIG["CC"]
-          when "gcc"
-            omp_opt = "-fopenmp"
-          else
-            omp_opt = nil
-          end
-        end
-        if omp_opt
-          src << <<EOF
-$CFLAGS << " " << "#{omp_opt}"
-$DLDFLAGS << " " << "#{omp_opt}"
-EOF
-        else
-          warn "openmp is disabled (Set compiler option for OpenMP to NArrayCLoop.omp_opt"
-          warn "openmp is disabled"
-        end
-      end
-
-      src << <<EOF
-
-create_makefile("narray_ext_#{tmpnum}")
-EOF
     end
 
 
@@ -469,6 +367,93 @@ EOF
       end
 
     end # class Ary
+
+
+
+    # templates
+
+    TEMPL_ccode = ERB.new <<EOF
+#include "ruby.h"
+#include "narray.h"
+
+VALUE
+<%= func_name %>(VALUE self, VALUE rb_<%= args.join(", VALUE rb_") %>) {
+<% ars.each_with_index do |ary,i| %>
+<%   ctype = ary.ctype %>
+  <%= ctype %> v<%= i %> = NA_PTR_TYPE(rb_v<%= i %>, <%= ctype %>);
+<% end %>
+<% @@idxmax.times do |i| %>
+  int i<%= i %>;
+<% end %>
+<%= @@body %>
+
+  return Qnil;
+}
+
+void
+Init_narray_ext_<%= @@tmpnum %>()
+{
+  VALUE mNumRu = rb_define_module("NumRu");
+  VALUE mNArrayCLoop = rb_define_module_under(mNumRu, "NArrayCLoop");
+  rb_define_module_function(mNArrayCLoop, "c_func_<%= @@tmpnum %>", <%= func_name %>, <%= ars.length %>);
+}
+EOF
+
+
+    TEMPL_extconf = ERB.new <<EOF
+require "mkmf"
+<% if @@header_path %>
+header_path = "<%= @@header_path %>"
+<% else %>
+require "rubygems"
+gem_path = nil
+if Gem::Specification.respond_to?(:find_by_name)
+  if spec = Gem::Specification.find_by_name("numru-narray")
+    gem_path = spec.full_gem_path
+  end
+else
+  if spec = Gem.source_index.find_name("numru-narray").any?
+    gem_path = spec.full_gem_path
+  end
+end
+unless gem_path
+  raise "gem numru-narray not found"
+end
+header_path = File.join(gem_path, "ext", "numru", "narray")
+<% end %>
+
+find_header("narray_config.h", *([header_path]+Dir["../tmp/*/narray/*"]))
+unless find_header("narray.h", header_path)
+  STDERR.print "narray.h not found\n"
+  STDERR.print "Set path of narray.h to NumRu::NArrayCLoop.header_path\n"
+  raise "narray.h not found"
+end
+
+# openmp enable
+<% if @@omp %>
+<%   if @@omp_opt %>
+omp_opt = <%= @@omp_opt %>
+<%   else %>
+case RbConfig::CONFIG["CC"]
+when "gcc"
+  omp_opt = "-fopenmp"
+else
+  omp_opt = nil
+end
+<%   end %>
+if omp_opt
+  $CFLAGS << " " << omp_opt
+  $DLDFLAGS << " " << omp_opt
+else
+  warn "openmp is disabled (Set compiler option for OpenMP to NArrayCLoop.omp_opt"
+end
+<% else %>
+warn "openmp is disabled"
+<% end %>
+
+create_makefile("narray_ext_<%= @@tmpnum %>")
+EOF
+
 
   end # module NArrayCLoop
 
