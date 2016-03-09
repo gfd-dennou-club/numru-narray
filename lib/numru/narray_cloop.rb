@@ -25,14 +25,15 @@ module NumRu
       @@tmpnum += 1
       na = -1
       args = []
-      @@loop = Array.new
+      @@block = Array.new
+      @@nest_loop = 0
       @@omp = false
       @@idxmax = 0
       ars = arys.map do |ary|
         na += 1
         vn = "v#{na}"
         args.push vn
-        NArrayCLoop::Ary.new(ary.shape, ary.rank, ary.typecode, [:ary, vn], @@loop)
+        NArrayCLoop::Ary.new(ary.shape, ary.rank, ary.typecode, [:ary, vn], @@block)
       end
       @@body = ""
       self.module_exec(*ars,&block)
@@ -134,23 +135,24 @@ EOF
       return nil
     end
 
-    def self.cloop(min, max, openmp=false)
+    def self.c_loop(min, max, openmp=false)
       @@omp ||= openmp
-      i = @@loop.length
+      i = ( @@nest_loop += 1 )
       @@idxmax = [@@idxmax, i+1].max
       idx = NArrayCLoop::Index.new(i, min, max)
       @@body << "#pragma omp parallel for\n" if openmp
       @@body << "  "*(i+1)
       @@body << "for (i#{i}=#{min}; i#{i}<=#{max}; i#{i}++) {\n"
 
-      @@loop.push Array.new
+      @@block.push Array.new
       yield(idx)
       offset = "  "*(i+2)
-      @@loop.pop.each do |ex|
+      @@block.pop.each do |ex|
         @@body << offset
         @@body << (String===ex ? ex : ex.to_c)
       end
       @@body << "  "*(i+1)+"}\n"
+      @@nest_loop -= 1
     end
 
     def self.extconf(tmpnum, omp)
