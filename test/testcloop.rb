@@ -235,5 +235,41 @@ class TestCLoop < Test::Unit::TestCase
     assert_equal(zr, z)
   end
 
+  def test_if_index
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          c_if( j < 50 ) do
+            z[i,j] = x[i,j] + y[i,j]
+          end
+        end
+      end
+    end
+    zr = NArray.lint(N,M)
+    zr[true,0...50] = @x[true,0...50] + @y[true,0...50]
+    assert_equal(zr, z)
+  end
+
+  def test_if_and
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          c_if( (j < 50).c_and(x[i,j] < 100) ) do
+            z[i,j] = x[i,j] + y[i,j]
+          end
+        end
+      end
+    end
+    zr = NArray.lint(N,M)
+    idx = 0...50
+    mask = @x[true,idx].lt(100)
+    zrs = NArray.lint(N,50)
+    zrs[mask] = @x[true,idx][mask] + @y[true,idx][mask]
+    zr[true,idx] = zrs
+    assert_equal(zr, z)
+  end
+
 end
 

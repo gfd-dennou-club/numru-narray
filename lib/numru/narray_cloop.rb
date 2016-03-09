@@ -123,9 +123,7 @@ EOF
       yield(idx)
       offset = "  "*(i+2)
       @@block.pop.each do |ex|
-        @@body << offset
-        @@body << (String===ex ? ex : ex.to_c)
-        @@body << ";\n"
+        @@body << "#{offset}#{ex};\n"
       end
       @@body << "  "*(i+1)+"}\n"
       @@nest_loop -= 1
@@ -134,22 +132,23 @@ EOF
     def self.c_if(cond)
       i = @@block.length
       if i==0
-        raise "cif must be in a loop"
+        raise "c_if must be in a loop"
       end
       @@body << "  "*(@@block.length+1)
-      @@body << "if ( #{cond.to_c} ) {\n"
+      @@body << "if ( #{cond} ) {\n"
 
       @@block.push Array.new
       yield
       offset = "  "*(i+2)
       @@block.pop.each do |ex|
-        @@body << offset
-        @@body << (String===ex ? ex : ex.to_c)
-        @@body << ";\n"
+        @@body << "#{offset}#{ex};\n"
       end
       @@body << "  "*(i+1)+"}\n"
     end
 
+    def self.c_break
+      @@block[-1].push "break"
+    end
 
 
     class Index
@@ -177,6 +176,14 @@ EOF
         else
           raise ArgumentError, "invalid argument"
         end
+      end
+
+      ["<", "<=", ">", ">=", "=="].each do |op|
+        eval <<EOF
+      def #{op}(other)
+        NArrayCLoop::Cond.new("\#{to_s} #{op} \#{other}")
+      end
+EOF
       end
 
       def to_s
@@ -256,11 +263,7 @@ EOF
         ["+", "add"],
         ["-", "sub"],
         ["*", "mul"],
-        ["/", "div"],
-        [">",  "gt"],
-        [">=", "ge"],
-        ["<",  "lt"],
-        ["<=", "le"]
+        ["/", "div"]
       ].each do |m, op|
         str = <<EOF
       def #{m}(other)
@@ -270,7 +273,19 @@ EOF
         eval str
       end
 
-      def to_c
+      [">", ">=", "<", "<=", "=="].each do |op|
+        str = <<EOF
+      def #{op}(other)
+        unless @rank==0
+          raise "slice first"
+        end
+        NArrayCLoop::Cond.new("\#{to_s} #{op} \#{other}")
+      end
+EOF
+        eval str
+      end
+
+      def to_s
         get_str(@ops)
       end
 
@@ -284,8 +299,6 @@ EOF
       end
 
       @@twoop = {:add => "+", :sub => "-", :mul => "*", :div => "/", :set => "="}
-      @@compop = {:gt => ">", :ge => ">=", :lt => "<", :le => "<="}
-
       private
       def get_str(obj)
         op = obj[0]
@@ -307,11 +320,6 @@ EOF
           return "#{o1} #{@@twoop[op]} #{o2}"
         when :int, :ary
           return obj[0].to_s
-        when :gt, :ge, :lt, :le
-          o1, o2 = obj
-          o1 = get_str(o1)
-          o2 = get_str(o2)
-          return "#{o1} #{@@compop[op]} #{o2}"
         else
           raise "unexpected value: #{op} (#{op.class})"
         end
@@ -368,6 +376,28 @@ EOF
 
     end # class Ary
 
+    class Cond
+
+      def initialize(cond)
+        @cond = cond
+      end
+
+      [
+        ["and", "&&"],
+        ["or", "||"]
+      ].each do |m, op|
+        eval <<EOF
+      def c_#{m}(other)
+        self.class.new("(\#{@cond}) #{op} (\#{other})")
+      end
+EOF
+      end
+
+      def to_s
+        @cond
+      end
+
+    end
 
 
     # templates
