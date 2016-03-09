@@ -87,16 +87,11 @@ EOF
           File.open("extconf.rb", "w") do |file|
             file.print extconf(@@tmpnum,@@omp)
           end
-          unless system("ruby extconf.rb > log 2>&1") && system("make >> log 2>&1")
+          unless system("ruby extconf.rb > log 2>&1")
             print sep
-            print "# LOG (ruby extconf.rb & make)\n"
+            print "# LOG (ruby extconf.rb)\n"
             print sep
             print File.read("log"), "\n"
-
-            print sep
-            print "# C source (#{fname})\n"
-            print sep
-            print File.read(fname), "\n"
 
             print sep
             print "# extconf.rb\n"
@@ -108,6 +103,20 @@ EOF
             print sep
             print File.read("mkmf.log"), "\n"
             print sep
+
+            print "\n"
+            raise("extconf error")
+          end
+          unless system("make > log 2>&1")
+            print sep
+            print "# LOG (make)\n"
+            print sep
+            print File.read("log"), "\n"
+
+            print sep
+            print "# C source (#{fname})\n"
+            print sep
+            print File.read(fname), "\n"
 
             print "\n"
             raise("compile error")
@@ -137,23 +146,45 @@ EOF
 
     def self.c_loop(min, max, openmp=false)
       @@omp ||= openmp
-      i = ( @@nest_loop += 1 )
-      @@idxmax = [@@idxmax, i+1].max
-      idx = NArrayCLoop::Index.new(i, min, max)
+      i = @@block.length
+      @@idxmax = [@@idxmax, @@nest_loop+1].max
+      idx = NArrayCLoop::Index.new(@@nest_loop, min, max)
       @@body << "#pragma omp parallel for\n" if openmp
-      @@body << "  "*(i+1)
-      @@body << "for (i#{i}=#{min}; i#{i}<=#{max}; i#{i}++) {\n"
+      @@body << "  "*(@@nest_loop+1)
+      @@body << "for (i#{@@nest_loop}=#{min}; i#{@@nest_loop}<=#{max}; i#{@@nest_loop}++) {\n"
 
       @@block.push Array.new
+      @@nest_loop += 1
       yield(idx)
       offset = "  "*(i+2)
       @@block.pop.each do |ex|
         @@body << offset
         @@body << (String===ex ? ex : ex.to_c)
+        @@body << ";\n"
       end
       @@body << "  "*(i+1)+"}\n"
       @@nest_loop -= 1
     end
+
+    def self.c_if(cond)
+      i = @@block.length
+      if i==0
+        raise "cif must be in a loop"
+      end
+      @@body << "  "*(@@block.length+1)
+      @@body << "if ( #{cond.to_c} ) {\n"
+
+      @@block.push Array.new
+      yield
+      offset = "  "*(i+2)
+      @@block.pop.each do |ex|
+        @@body << offset
+        @@body << (String===ex ? ex : ex.to_c)
+        @@body << ";\n"
+      end
+      @@body << "  "*(i+1)+"}\n"
+    end
+
 
     def self.extconf(tmpnum, omp)
       src = <<EOF
@@ -302,7 +333,7 @@ EOF
         unless idx.length == @rank
           raise "number of idx != rank"
         end
-        self.class.new(@shape, 0, @type, [:slice, @ops, slice(*idx)])
+        self.class.new(@shape, 0, @type, [:slice, @ops, slice(*idx)], @exec)
       end
 
       def []=(*arg)
@@ -323,24 +354,26 @@ EOF
         return nil
       end
 
-      def +(other)
-        arithmetic(other, :add)
+      [
+        ["+", "add"],
+        ["-", "sub"],
+        ["*", "mul"],
+        ["/", "div"],
+        [">",  "gt"],
+        [">=", "ge"],
+        ["<",  "lt"],
+        ["<=", "le"]
+      ].each do |m, op|
+        str = <<EOF
+      def #{m}(other)
+        binary_operation(other, :#{op})
       end
-
-      def -(other)
-        arithmetic(other, :sub)
-      end
-
-      def *(other)
-        arithmetic(other, :mul)
-      end
-
-      def /(other)
-        arithmetic(other, :div)
+EOF
+        eval str
       end
 
       def to_c
-        get_str(@ops) + ";\n"
+        get_str(@ops)
       end
 
       def ctype
@@ -353,6 +386,7 @@ EOF
       end
 
       @@twoop = {:add => "+", :sub => "-", :mul => "*", :div => "/", :set => "="}
+      @@compop = {:gt => ">", :ge => ">=", :lt => "<", :le => "<="}
 
       private
       def get_str(obj)
@@ -375,20 +409,25 @@ EOF
           return "#{o1} #{@@twoop[op]} #{o2}"
         when :int, :ary
           return obj[0].to_s
+        when :gt, :ge, :lt, :le
+          o1, o2 = obj
+          o1 = get_str(o1)
+          o2 = get_str(o2)
+          return "#{o1} #{@@compop[op]} #{o2}"
         else
           raise "unexpected value: #{op} (#{op.class})"
         end
       end
 
-      def arithmetic(other, op)
+      def binary_operation(other, op)
         unless @rank==0
           raise "slice first"
         end
         case other
         when Numeric
-          return self.class.new(@shape, 0, @type, [op, @ops, [:int,other]])
+          return self.class.new(@shape, 0, @type, [op, @ops, [:int,other]], @exec)
         when self.class
-          return self.class.new(@shape, 0, @type, [op, @ops, other.ops])
+          return self.class.new(@shape, 0, @type, [op, @ops, other.ops], @exec)
         else
           raise ArgumentError, "invalid argument: #{other} (#{other.class})"
         end

@@ -201,5 +201,39 @@ class TestCLoop < Test::Unit::TestCase
     end
   end
 
+  def test_if_element
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          c_if( x[i,j] > 500 ) do
+            z[i,j] = x[i,j] + y[i,j]
+          end
+        end
+      end
+    end
+    mask = @x.gt(500)
+    zr = NArray.lint(N,M)
+    zr[mask] = @x[mask] + @y[mask]
+    assert_equal(zr, z)
+  end
+
+  def test_if_element_add
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          c_if( x[i,j] + y[i,j] >= 1000 ) do
+            z[i,j] = x[i,j] + y[i,j]
+          end
+        end
+      end
+    end
+    mask = (@x+@y).ge(1000)
+    zr = NArray.lint(N,M)
+    zr[mask] = @x[mask] + @y[mask]
+    assert_equal(zr, z)
+  end
+
 end
 
