@@ -5,9 +5,11 @@ require "erb"
 module NumRu
   module NArrayCLoop
 
-    @@tmpnum = 0
-    @@verbose = false
-    @@omp_opt = nil
+    @@kernel_num = 0 # number of kernels
+
+    # options
+    @@verbose = false    # switch for verbose mode
+    @@omp_opt = nil      # compiler option for OpenMP
     @@header_path = nil  # path of narray.h
 
     def self.verbose=(bool)
@@ -22,25 +24,25 @@ module NumRu
       @@header_path = path
     end
 
+
     def self.kernel(*arys,&block)
-      @@tmpnum += 1
+      @@kernel_num += 1
+      @@omp = false # true if openmp is enabled at least one loop
       na = -1
       args = []
-      @@block = Array.new
-      @@nest_loop = 0
-      @@omp = false
+      @@main = NArrayCLoop::BlockMain.new
       @@idxmax = 0
       ars = arys.map do |ary|
         na += 1
         vn = "v#{na}"
         args.push vn
-        NArrayCLoop::Ary.new(ary.shape, ary.rank, ary.typecode, [:ary, vn], @@block)
+        NArrayCLoop::Ary.new(ary.shape, ary.rank, ary.typecode, [:ary, vn], @@main)
       end
-      @@body = ""
+
       self.module_exec(*ars,&block)
 
-      tmpnum = 0
-      func_name = "rb_narray_ext_#{@@tmpnum}"
+      body = @@main.to_s
+      func_name = "rb_narray_ext_#{@@kernel_num}"
       code = TEMPL_ccode.result(binding)
 
       sep = "#"*72 + "\n"
@@ -56,7 +58,7 @@ module NumRu
 #      Dir.mkdir(tmpdir) unless File.exist?(tmpdir)
       Dir.mktmpdir(nil, ".") do |tmpdir|
         Dir.chdir(tmpdir) do |dir|
-          fname = "narray_ext_#{@@tmpnum}.c"
+          fname = "narray_ext_#{@@kernel_num}.c"
           File.open(fname, "w") do |file|
             file.print code
           end
@@ -93,15 +95,15 @@ module NumRu
             print sep, "# execute\n"
             print sep
             print <<EOF
-require "./narray_ext_#{@@tmpnum}.so"
-NumRu::NArrayCLoop.send("c_func_#{@@tmpnum}", #{(0...arys.length).to_a.map{|i| "v#{i}"}.join(", ")})
+require "./narray_ext_#{@@kernel_num}.so"
+NumRu::NArrayCLoop.send("c_func_#{@@kernel_num}", #{(0...arys.length).to_a.map{|i| "v#{i}"}.join(", ")})
 
 EOF
           end
 
           # execute
-          require "./narray_ext_#{@@tmpnum}.so"
-          NumRu::NArrayCLoop.send("c_func_#{@@tmpnum}", *arys)
+          require "./narray_ext_#{@@kernel_num}.so"
+          NumRu::NArrayCLoop.send("c_func_#{@@kernel_num}", *arys)
         end
       end
 
@@ -109,47 +111,210 @@ EOF
     end
 
 
-    def self.c_loop(min, max, openmp=false)
+    def self.c_loop(min, max, openmp=false, &block)
       @@omp ||= openmp
-      i = @@block.length
-      @@idxmax = [@@idxmax, @@nest_loop+1].max
-      idx = NArrayCLoop::Index.new(@@nest_loop, min, max)
-      @@body << "#pragma omp parallel for\n" if openmp
-      @@body << "  "*(@@nest_loop+1)
-      @@body << "for (i#{@@nest_loop}=#{min}; i#{@@nest_loop}<=#{max}; i#{@@nest_loop}++) {\n"
-
-      @@block.push Array.new
-      @@nest_loop += 1
-      yield(idx)
-      offset = "  "*(i+2)
-      @@block.pop.each do |ex|
-        @@body << "#{offset}#{ex};\n"
-      end
-      @@body << "  "*(i+1)+"}\n"
-      @@nest_loop -= 1
+      parent = @@main.current
+      loop = NArrayCLoop::BlockLoop.new(parent, min, max, openmp, &block)
+      @@idxmax = [@@idxmax, loop.idx+1].max
+      return loop
     end
 
-    def self.c_if(cond)
-      i = @@block.length
-      if i==0
-        raise "c_if must be in a loop"
-      end
-      @@body << "  "*(@@block.length+1)
-      @@body << "if ( #{cond} ) {\n"
 
-      @@block.push Array.new
-      yield
-      offset = "  "*(i+2)
-      @@block.pop.each do |ex|
-        @@body << "#{offset}#{ex};\n"
-      end
-      @@body << "  "*(i+1)+"}\n"
+    def self.c_if(cond, &block)
+      parent = @@main.current
+      return NArrayCLoop::BlockIf.new(parent, cond, &block)
     end
 
     def self.c_break
-      @@block[-1].push "break"
+      @@main.current.append "break"
     end
 
+
+
+    # private class
+
+    class Block # abstract class
+
+      attr_reader :idx, :depth
+
+      def initialize(parent)
+        @parent = parent
+        @idx = parent.idx
+        @depth = parent.depth + 1
+        @block = Array.new
+        parent.current = self
+        parent.append self
+      end
+
+      def current=(block)
+        @parent.current = block
+      end
+      def current
+        @parent.current
+      end
+
+      def append(exp)
+        @block.push exp
+      end
+
+      def indent
+        @indent ||= "  " * (@depth+1)
+      end
+
+      def postfix
+        "#{"  " * @depth}};"
+      end
+
+      def to_s
+        str = prefix
+        @block.each do |ex|
+          str << "#{indent}#{ex}\n"
+        end
+        str << postfix
+        return str
+      end
+
+    end
+
+    class BlockMain < Block
+
+      def initialize
+        @parent = nil
+        @depth = 0
+        @idx = -1
+        @block = Array.new
+        @current = self
+      end
+
+      def current=(block)
+        @current = block
+      end
+      def current
+        @current
+      end
+
+      def type
+        :main
+      end
+
+      def prefix
+        ""
+      end
+      def postfix
+        ""
+      end
+
+    end
+
+    class BlockLoop < Block
+
+      def initialize(parent, min, max, openmp)
+        super(parent)
+        @min = min
+        @max = max
+        @idx = parent.idx + 1
+        @openmp = openmp
+        yield( NArrayCLoop::Index.new(@idx, min, max) )
+      end
+
+      def prefix
+        str = ""
+        str << "#pragma omp parallel for\n#{indent}" if @openmp
+        str << "for (i#{@idx}=#{@min}; i#{@idx}<=#{@max}; i#{@idx}++) {\n"
+        str
+      end
+
+      def type
+        :loop
+      end
+
+    end
+
+    class BlockIf < Block
+
+      def initialize(parent, cond)
+        unless parent.idx >= 0
+          raise "c_if must be in a loop"
+        end
+        super(parent)
+        @cond = cond
+        @elseif = false
+        yield
+      end
+
+      def prefix
+        "if ( #{@cond} ) {\n"
+      end
+
+      def postfix
+        @elseif ? "#{"  " * @depth}}" : super
+      end
+
+      def elseif(cond, &block)
+        @elseif = true
+        NArrayCLoop::BlockElseIf.new(@parent, cond, &block)
+      end
+
+      def else(&block)
+        @elseif = true
+        NArrayCLoop::BlockElse.new(@parent, &block)
+      end
+
+      def type
+        :if
+      end
+
+    end
+
+    class BlockElseIf < Block
+
+      def initialize(parent, cond)
+        super(parent)
+        @cond = cond
+        @elseif = false
+        yield
+      end
+
+      def prefix
+        "else if ( #{@cond} ) {\n"
+      end
+
+      def postfix
+        @elseif ? "#{"  " * @depth}}" : super
+      end
+
+      def elseif(cond, &block)
+        @elseif = true
+        NArrayCLoop::BlockElseIf.new(@parent, cond, &block)
+      end
+
+      def else(&block)
+        @elseif = true
+        NArrayCLoop::BlockElse.new(@parent, &block)
+      end
+
+      def type
+        :elseif
+      end
+
+    end
+
+    class BlockElse < Block
+
+      def initialize(parent)
+        super(parent)
+        yield
+      end
+
+      def prefix
+        "else {\n"
+      end
+
+      def type
+        :else
+      end
+
+    end
 
     class Index
 
@@ -223,12 +388,12 @@ EOF
         @@ntype2ctype[NArray::LLINT] = "int64_t*"
       end
 
-      def initialize(shape, rank, type, ops, exec=nil)
+      def initialize(shape, rank, type, ops, block=nil)
         @shape = shape
         @rank = rank
         @type = type
         @ops = ops
-        @exec = exec
+        @block = block
         if @type==NArray::SCOMPLEX || @type==NArray::DCOMPLEX
           raise "complex is not supported at this moment"
         end
@@ -238,7 +403,7 @@ EOF
         unless idx.length == @rank
           raise "number of idx != rank"
         end
-        self.class.new(@shape, 0, @type, [:slice, @ops, slice(*idx)], @exec)
+        self.class.new(@shape, 0, @type, [:slice, @ops, slice(*idx)])
       end
 
       def []=(*arg)
@@ -250,9 +415,9 @@ EOF
         ops = [:slice, @ops, slice(*idx)]
         case other
         when Numeric
-          @exec[-1].push self.class.new(@shape, @rank, @type, [:set, ops, [:int,other]])
+          @block.current.append self.class.new(@shape, @rank, @type, [:set, ops, [:int,other]])
         when self.class
-          @exec[-1].push self.class.new(@shape, @rank, @type, [:set, ops, other.ops])
+          @block.current.append self.class.new(@shape, @rank, @type, [:set, ops, other.ops])
         else
           raise ArgumentError, "invalid argument"
         end
@@ -298,7 +463,7 @@ EOF
         @ops
       end
 
-      @@twoop = {:add => "+", :sub => "-", :mul => "*", :div => "/", :set => "="}
+      @@twoop = {:add => "+", :sub => "-", :mul => "*", :div => "/"}
       private
       def get_str(obj)
         op = obj[0]
@@ -317,7 +482,7 @@ EOF
           o1, o2 = obj
           o1 = get_str(o1)
           o2 = get_str(o2)
-          return "#{o1} #{@@twoop[op]} #{o2}"
+          return "#{o1} = #{o2};"
         when :int, :ary
           return obj[0].to_s
         else
@@ -331,9 +496,9 @@ EOF
         end
         case other
         when Numeric
-          return self.class.new(@shape, 0, @type, [op, @ops, [:int,other]], @exec)
+          return self.class.new(@shape, 0, @type, [op, @ops, [:int,other]])
         when self.class
-          return self.class.new(@shape, 0, @type, [op, @ops, other.ops], @exec)
+          return self.class.new(@shape, 0, @type, [op, @ops, other.ops])
         else
           raise ArgumentError, "invalid argument: #{other} (#{other.class})"
         end
@@ -415,17 +580,17 @@ VALUE
 <% @@idxmax.times do |i| %>
   int i<%= i %>;
 <% end %>
-<%= @@body %>
+<%= body %>
 
   return Qnil;
 }
 
 void
-Init_narray_ext_<%= @@tmpnum %>()
+Init_narray_ext_<%= @@kernel_num %>()
 {
   VALUE mNumRu = rb_define_module("NumRu");
   VALUE mNArrayCLoop = rb_define_module_under(mNumRu, "NArrayCLoop");
-  rb_define_module_function(mNArrayCLoop, "c_func_<%= @@tmpnum %>", <%= func_name %>, <%= ars.length %>);
+  rb_define_module_function(mNArrayCLoop, "c_func_<%= @@kernel_num %>", <%= func_name %>, <%= ars.length %>);
 }
 EOF
 
@@ -481,7 +646,7 @@ end
 warn "openmp is disabled"
 <% end %>
 
-create_makefile("narray_ext_<%= @@tmpnum %>")
+create_makefile("narray_ext_<%= @@kernel_num %>")
 EOF
 
 

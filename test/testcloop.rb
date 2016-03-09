@@ -271,5 +271,35 @@ class TestCLoop < Test::Unit::TestCase
     assert_equal(zr, z)
   end
 
+  def test_if_else
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          c_if( j < 50 ) do
+            z[i,j] = x[i,j] + y[i,j]
+          end.elseif( j < 70 ) do
+            z[i,j] = x[i,j] - y[i,j]
+          end.elseif( i < 5 ) do
+            z[i,j] = 10
+          end.else do
+            z[i,j] = 100
+          end
+        end
+      end
+    end
+    zr = NArray.lint(N,M)
+    j_idx0 = 0...50
+    j_idx1 = 50...70
+    j_idx2 = 70..-1
+    i_idx0 = 0...5
+    i_idx1 = 5..-1
+    zr[true,j_idx0] = @x[true,j_idx0] + @y[true,j_idx0]
+    zr[true,j_idx1] = @x[true,j_idx1] - @y[true,j_idx1]
+    zr[i_idx0,j_idx2] = 10
+    zr[i_idx1,j_idx2] = 100
+    assert_equal(zr, z)
+  end
+
 end
 
