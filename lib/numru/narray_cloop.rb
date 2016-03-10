@@ -420,6 +420,8 @@ EOF
         @@ntype2ctype[NArray::LLINT] = "int64_t*"
       end
 
+      attr_reader :rank
+
       def initialize(shape, rank, type, ops, block=nil)
         @shape = shape
         @rank = rank
@@ -555,13 +557,20 @@ EOF
         idx.each_with_index do |id,i|
           case id
           when NArrayCLoop::Index
-            if id.min < 0 || id.max > @shape[i]-1
+            if (Fixnum===id.min && id.min < 0) || (Fixnum===id.max && id.max > @shape[i]-1)
               raise ArgumentError, "out of boundary"
             end
           when Fixnum
             idx[i] = id + @shape[i] if id < 0
             if id > @shape[i]-1
               raise ArgumentError, "out of boundary"
+            end
+          when NArrayCLoop::Ary
+            unless /int/ =~ id.ctype
+              raise ArgumentError, "must be interger type"
+            end
+            unless id.rank==0
+              raise ArgumentError, "rank must be 0"
             end
           else
             raise ArgumentError, "index is invalid: #{id} (#{id.class}) #{@rank}"

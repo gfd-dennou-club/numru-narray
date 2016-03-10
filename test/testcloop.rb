@@ -327,5 +327,43 @@ class TestCLoop < Test::Unit::TestCase
     assert_equal(zr, z)
   end
 
+  def test_array_index
+    z = NArray.lint(N,M)
+    i_idx = NArray.sint(N).random(N)
+    j_idx = NArray.sint(M).random(M)
+    NArrayCLoop.kernel(@x,@y,i_idx,j_idx,z) do |x,y,i_idx,j_idx,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          z[i,j] = x[i,j] + y[i_idx[i],j_idx[j]]
+        end
+      end
+    end
+    zr = @x + @y[i_idx,j_idx]
+    assert_equal(zr, z)
+  end
+
+  def test_array_loop_range
+    z = NArray.lint(M)
+    idx = NArray.sint(M,2).random(N)
+    min = idx.min(1)
+    max = idx.max(1)
+    NArrayCLoop.kernel(@x,min,max,z) do |x,min,max,z|
+      c_loop(0,M-1) do |j|
+        z[j] = 0.0
+        c_loop(min[j],max[j]) do |i|
+          z[j] = z[j] + x[i,j]
+        end
+      end
+    end
+    zr = NArray.lint(M)
+    for j in 0..M-1
+      zr[j] = 0.0
+      for i in min[j]..max[j]
+        zr[j] = zr[j] + @x[i,j]
+      end
+    end
+    assert_equal(zr, z)
+  end
+
 end
 
