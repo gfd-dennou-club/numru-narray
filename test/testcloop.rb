@@ -329,13 +329,25 @@ class TestCLoop < Test::Unit::TestCase
 
   def test_scalar
     z = NArray.sfloat(M)
+    assert_raise(RuntimeError) do
+      NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+        c_loop(0,M-1) do |j|
+          r = NArrayCLoop::Scalar["float", 0.0]
+          c_loop(0,N-1) do |i|
+            p = ( x[i,j] - y[i,j] ).scalar
+            q = ( x[i,j] + y[i,j] + 1 ).scalar("float")
+            r = r + p / q
+          end
+          z[j] = r
+        end
+      end
+    end
     NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
       c_loop(0,M-1) do |j|
-        r = NArrayCLoop::Scalar.new("float", 0.0)
+        r = NArrayCLoop::Scalar["float", 0.0]
         c_loop(0,N-1) do |i|
           p = ( x[i,j] - y[i,j] ).scalar
           q = ( x[i,j] + y[i,j] + 1 ).scalar("float")
-#          r = r + p / q
           r.assign r + p / q
         end
         z[j] = r
@@ -345,6 +357,50 @@ class TestCLoop < Test::Unit::TestCase
     q = ( @x + @y + 1 ).to_type(NArray::SFLOAT)
     r = p / q
     zr = r.sum(0)
+    assert_equal(zr, z)
+  end
+
+  def test_scalar_loop_range
+    z = NArray.sint(M)
+    assert_raise(RuntimeError) do
+      NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+        c_loop(0,M-1) do |j|
+          imax = NArrayCLoop::Scalar["int", 0]
+          c_if ( x[0,j] < N ) do
+            imax = x[0,j]
+          end
+          c_loop(0,imax) do |i|
+            z[j] = z[j] + y[i,j]
+          end
+        end
+      end
+    end
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        imax = NArrayCLoop::Scalar["int", 0]
+        c_if ( x[0,j] < N ) do
+          imax.assign x[0,j]
+        end
+        r = NArrayCLoop::Scalar["int", 0]
+        c_loop(0,imax) do |i|
+          r.assign r + y[i,j]
+        end
+        z[j] = r
+      end
+    end
+
+    zr = NArray.sint(M)
+    for j in 0..M-1
+      imax = 0
+      if @x[0,j] < N
+        imax = @x[0,j]
+      end
+      r = 0
+      for i in 0..imax
+        r = r + @y[i,j]
+      end
+      zr[j] = r
+    end
     assert_equal(zr, z)
   end
 

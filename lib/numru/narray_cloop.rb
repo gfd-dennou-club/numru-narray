@@ -41,6 +41,7 @@ module NumRu
       end
 
       self.module_exec(*ars,&block)
+      @@kernel.close
 
       body = @@kernel.to_s
       func_name = "rb_narray_ext_#{@@kernel_num}"
@@ -149,7 +150,7 @@ EOF
       ].each do |prec,ctype|
         eval <<EOF, binding, __FILE__, __LINE__+1
     def self.#{func}#{prec}(*arg)
-        NArrayCLoop::Scalar.new("#{ctype}", "#{func}#{prec}(\#{arg.map{|a| a.to_s}.join(",")})", @@kernel.current)
+        NArrayCLoop::Scalar.new("#{ctype}", "#{func}#{prec}(\#{arg.map{|a| a.to_s}.join(",")})", @@kernel.current, arg)
     end
 EOF
       end
@@ -164,7 +165,7 @@ EOF
       ].each do |prec,ctype|
         eval <<EOF, binding, __FILE__, __LINE__+1
     def self.#{prec}#{func}(*arg)
-        NArrayCLoop::Scalar.new("#{ctype}", "#{prec}#{func}(\#{arg.map{|a| a.to_s}.join(",")})", @@kernel.current)
+        NArrayCLoop::Scalar.new("#{ctype}", "#{prec}#{func}(\#{arg.map{|a| a.to_s}.join(",")})", @@kernel.current, arg)
     end
 EOF
       end
@@ -184,14 +185,17 @@ EOF
       attr_reader :idx, :depth
       attr_accessor :scalar_num
 
-      def initialize(parent)
+      def initialize(parent, *arg)
         @parent = parent
-        @idx = parent.idx
         @depth = parent.depth + 1
+        @idx ||= parent.idx
         @block = Array.new
+        @svs = Array.new
         @scalar_num = parent.scalar_num
         parent.current = self
         parent.append self
+        yield(*arg)
+        close
       end
 
       def current=(block)
@@ -222,6 +226,30 @@ EOF
         return str
       end
 
+      def define_scalar(scalar)
+        @svs.push scalar
+      end
+
+      def use_scalar(scalar)
+        @svs.delete_if{|sv| sv.object_id == scalar.object_id}
+      end
+
+      def close
+        @parent.current = @parent unless type == :main
+        unless @svs.empty?
+          raise <<EOF
+In block
+<<< block begin >>>
+#{self}
+<<< block end >>>
+scalar variable(s) is(are) defined but not used:
+  #{@svs.map{|s| s.inspect}.join("\n  ")}
+Do not use '=' to asigin value to scalar variable.
+Use #assign in stead.
+EOF
+        end
+      end
+
     end
 
     class BlockMain < Block
@@ -232,6 +260,7 @@ EOF
         @idx = -1
         @scalar_num = 0
         @block = Array.new
+        @svs = Array.new
         @current = self
       end
 
@@ -257,14 +286,14 @@ EOF
 
     class BlockLoop < Block
 
-      def initialize(parent, min, max, openmp)
-        super(parent)
+      def initialize(parent, min, max, openmp, &block)
         @min = min
         @max = max
         @idx = parent.idx + 1
         @openmp = openmp
-        yield( NArrayCLoop::Index.new(@idx, min, max) )
-        parent.current = parent
+        min.use if NArrayCLoop::Scalar === min
+        max.use if NArrayCLoop::Scalar === max
+        super(parent, NArrayCLoop::Index.new(@idx, min, max), &block)
       end
 
       def prefix
@@ -282,15 +311,13 @@ EOF
 
     class BlockIf < Block
 
-      def initialize(parent, cond)
+      def initialize(parent, cond, &block)
         unless parent.idx >= 0
           raise "c_if must be in a loop"
         end
-        super(parent)
         @cond = cond
         @elseif = false
-        yield
-        parent.current = parent
+        super(parent, &block)
       end
 
       def prefix
@@ -319,11 +346,10 @@ EOF
 
     class BlockElseIf < Block
 
-      def initialize(parent, cond)
-        super(parent)
+      def initialize(parent, cond, &block)
         @cond = cond
         @elseif = false
-        yield
+        super(parent, &block)
       end
 
       def prefix
@@ -352,9 +378,8 @@ EOF
 
     class BlockElse < Block
 
-      def initialize(parent)
-        super(parent)
-        yield
+      def initialize(parent, &block)
+        super(parent, &block)
       end
 
       def prefix
@@ -397,6 +422,7 @@ EOF
       ["<", "<=", ">", ">=", "=="].each do |op|
         eval <<EOF, binding, __FILE__, __LINE__+1
       def #{op}(other)
+        other.use if NArrayCLoop::Scalar === other
         NArrayCLoop::Cond.new("\#{to_s} #{op} \#{other}")
       end
 EOF
@@ -433,15 +459,28 @@ EOF
         @block = block
       end
 
+      def inspect
+        "<#{self.class.name}: type=#{@type}>"
+      end
+
     end
 
     class Scalar < Value
 
-      def initialize(type, value=nil, block=nil, define=nil)
-        super(type, block || NArrayCLoop.current_kernel)
-        @value = value.to_s
+      def self.[](type, value=nil)
+        self.new(type, value, NArrayCLoop.current_kernel).scalar
+      end
+
+      def initialize(type, value, block, parents=[], define=nil)
+        super(type, block)
+        case value
+        when Float, Integer, String, NArrayCLoop::Scalar, nil
+          @value = value.to_s
+        else
+          raise ArgumentError, "invalid value type: #{value.class}"
+        end
         @define = define
-        scalar unless block
+        @parents = parents
       end
 
       def -@
@@ -450,14 +489,15 @@ EOF
 
       def assign(other)
         @value = other.to_s
-        scalar
-        self
+        other.use(self) if NArrayCLoop::Scalar === other
+        @block.current.append "#{@define} = #{@value};"
+        return nil
       end
 
       %w(+ - * /).each do |op|
         eval <<EOF, binding, __FILE__, __LINE__+1
       def #{op}(other)
-        self.class.new(@type, "( \#{to_s} ) #{op} ( \#{other} )", @block)
+        self.class.new(@type, "( \#{to_s} ) #{op} ( \#{other} )", @block, [self,other])
       end
 EOF
       end
@@ -465,6 +505,8 @@ EOF
       [">", ">=", "<", "<=", "=="].each do |op|
         eval <<EOF, binding, __FILE__, __LINE__+1
       def #{op}(other)
+        self.use
+        other.use if NArrayCLoop::Scalar === other
         NArrayCLoop::Cond.new("( \#{to_s} ) #{op} ( \#{other} )")
       end
 EOF
@@ -472,15 +514,15 @@ EOF
 
       def scalar(type=nil)
         type ||= @type
-        unless @define
-          i = ( @block.current.scalar_num += 1 )
-          v = "s#{i}"
-          @define = v
-          @block.current.append "#{type} #{v} = #{@value};"
-        else
-          @block.current.append "#{@define} = #{@value};"
+        i = ( @block.current.scalar_num += 1 )
+        v = "s#{i}"
+        @block.current.append "#{type} #{v} = #{@value};"
+        obj = self.class.new(type, @value, @block, [self], v)
+        @block.current.define_scalar obj
+        (@parents + [self]).each do |obj|
+          obj.use if NArrayCLoop::Scalar === obj
         end
-        return self.class.new(type, @value, @block, @define)
+        return obj
       end
 
       def ctype
@@ -497,6 +539,24 @@ EOF
         else
           super
         end
+      end
+
+      def define
+        @define
+      end
+
+      def use(except=nil)
+        (@parents+[self]).each do |obj|
+          if NArrayCLoop::Scalar === obj
+            next if except && obj.object_id == except.object_id
+            obj.use(except) unless obj.object_id == self.object_id
+            @block.current.use_scalar(obj) if obj.define
+          end
+        end
+      end
+
+      def inspect
+        "<#{self.class.name}: type=#{@type}, defined?=#{self.define || false}, value=#{@value}>"
       end
 
     end # class Scalar
@@ -530,7 +590,7 @@ EOF
         unless idx.length == @rank
           raise "number of idx != rank"
         end
-        NArrayCLoop::Scalar.new(ctype, "#{@ary}[#{slice(*idx)}]", @block)
+        NArrayCLoop::Scalar.new(ctype, "#{@ary}[#{slice(*idx)}]", @block, [self])
       end
 
       def []=(*arg)
@@ -539,6 +599,7 @@ EOF
         ary = self[*idx]
         exec = "#{ary} = #{other};"
         @block.current.append exec
+        other.use if NArrayCLoop::Scalar === other
         return nil
       end
 
