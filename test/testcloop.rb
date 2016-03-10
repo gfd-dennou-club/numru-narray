@@ -301,5 +301,31 @@ class TestCLoop < Test::Unit::TestCase
     assert_equal(zr, z)
   end
 
+  def test_abs
+    z = NArray.llint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          z[i,j] = abs(x[i,j]) + llabs(-y[i,j])
+        end
+      end
+    end
+    zr = @x.abs + (-@y.to_type(NArray::LLINT)).abs
+    assert_equal(zr, z)
+  end
+
+  def test_math
+    z = NArray.dfloat(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          z[i,j] = exp(x[i,j]) + atan2f(x[i,j], y[i,j])
+        end
+      end
+    end
+    zr = NMath.exp(@x.to_type(NArray::DFLOAT)) + NMath.atan2(@x.to_type(NArray::SFLOAT),@y.to_type(NArray::SFLOAT))
+    assert_equal(zr, z)
+  end
+
 end
 

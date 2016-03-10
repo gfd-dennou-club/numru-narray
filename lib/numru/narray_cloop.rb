@@ -130,6 +130,38 @@ EOF
     end
 
 
+    # math.h
+    %w(sin asin cos acos tan atan atan2
+       sinh asinh cosh acosh tanh atanh
+       exp exp2 expm1 frexp ldexp log log2 log10 log1p logb ilogb modf scalbn scalbln
+       pow sqrt fabs hypot cbrt
+       erf erfc gamma lgamma tgamma
+       cail floor nearbyint rint lrint llrint round lround llround trunc
+       fmod remainder remquo
+       copysign nextafter nexttoward
+       fdim fmax fmin
+       fma
+       j0 j1 jn y0 y1 yn).each do |func|
+      ["", "f"].each do |prec|
+        eval <<EOF
+    def self.#{func}#{prec}(*arg)
+        NArrayCLoop::Ary.new([], 0, @type, [:math, "#{func}#{prec}", arg.map{|a| a.to_s}.join(",")])
+    end
+EOF
+      end
+    end
+
+    # stdlib.h
+    %w(abs).each do |func|
+      ["", "l","ll"].each do |prec|
+        eval <<EOF
+    def self.#{prec}#{func}(*arg)
+        NArrayCLoop::Ary.new([], 0, @type, [:math, "#{prec}#{func}", arg.map{|a| a.to_s}.join(",")])
+    end
+EOF
+      end
+    end
+
 
     # private class
 
@@ -399,6 +431,10 @@ EOF
         end
       end
 
+      def -@
+        self.class.new(@shape, 0, @type, [:neg, @ops, nil])
+      end
+
       def [](*idx)
         unless idx.length == @rank
           raise "number of idx != rank"
@@ -485,6 +521,11 @@ EOF
           return "#{o1} = #{o2};"
         when :int, :ary
           return obj[0].to_s
+        when :math
+          func, arg = obj
+          return "#{func}(#{arg})"
+        when :neg
+          return "( -#{get_str(obj[0])} )"
         else
           raise "unexpected value: #{op} (#{op.class})"
         end
@@ -505,13 +546,11 @@ EOF
       end
 
       def slice(*idx)
-        case @rank
-        when 0
+        if @rank == 0
           raise "rank is zero"
-        else
-          unless Array===idx && idx.length == @rank
-            raise ArgumentError, "number of index must be equal to rank"
-          end
+        end
+        unless Array===idx && idx.length == @rank
+          raise ArgumentError, "number of index must be equal to rank"
         end
         idx.each_with_index do |id,i|
           case id
