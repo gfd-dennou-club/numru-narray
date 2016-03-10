@@ -6,6 +6,7 @@ module NumRu
   module NArrayCLoop
 
     @@kernel_num = 0 # number of kernels
+    @@kernel         # current kernel
 
     # options
     @@verbose = false    # switch for verbose mode
@@ -30,18 +31,18 @@ module NumRu
       @@omp = false # true if openmp is enabled at least one loop
       na = -1
       args = []
-      @@main = NArrayCLoop::BlockMain.new
+      @@kernel = NArrayCLoop::BlockMain.new
       @@idxmax = 0
       ars = arys.map do |ary|
         na += 1
         vn = "v#{na}"
         args.push vn
-        NArrayCLoop::Ary.new(ary.shape, ary.rank, ary.typecode, [:ary, vn], @@main)
+        NArrayCLoop::Ary.new(ary.shape, ary.rank, ary.typecode, vn, @@kernel)
       end
 
       self.module_exec(*ars,&block)
 
-      body = @@main.to_s
+      body = @@kernel.to_s
       func_name = "rb_narray_ext_#{@@kernel_num}"
       code = TEMPL_ccode.result(binding)
 
@@ -113,7 +114,7 @@ EOF
 
     def self.c_loop(min, max, openmp=false, &block)
       @@omp ||= openmp
-      parent = @@main.current
+      parent = @@kernel.current
       loop = NArrayCLoop::BlockLoop.new(parent, min, max, openmp, &block)
       @@idxmax = [@@idxmax, loop.idx+1].max
       return loop
@@ -121,12 +122,12 @@ EOF
 
 
     def self.c_if(cond, &block)
-      parent = @@main.current
+      parent = @@kernel.current
       return NArrayCLoop::BlockIf.new(parent, cond, &block)
     end
 
     def self.c_break
-      @@main.current.append "break"
+      @@kernel.current.append "break"
     end
 
 
@@ -142,10 +143,13 @@ EOF
        fdim fmax fmin
        fma
        j0 j1 jn y0 y1 yn).each do |func|
-      ["", "f"].each do |prec|
-        eval <<EOF
+      [
+        ["", "double"],
+        ["f", "float"]
+      ].each do |prec,ctype|
+        eval <<EOF, binding, __FILE__, __LINE__+1
     def self.#{func}#{prec}(*arg)
-        NArrayCLoop::Ary.new([], 0, @type, [:math, "#{func}#{prec}", arg.map{|a| a.to_s}.join(",")])
+        NArrayCLoop::Scalar.new("#{ctype}", "#{func}#{prec}(\#{arg.map{|a| a.to_s}.join(",")})", @@kernel.current)
     end
 EOF
       end
@@ -153,14 +157,24 @@ EOF
 
     # stdlib.h
     %w(abs).each do |func|
-      ["", "l","ll"].each do |prec|
-        eval <<EOF
+      [
+        ["", "int"],
+        ["l", "long"],
+        ["ll", "long long"]
+      ].each do |prec,ctype|
+        eval <<EOF, binding, __FILE__, __LINE__+1
     def self.#{prec}#{func}(*arg)
-        NArrayCLoop::Ary.new([], 0, @type, [:math, "#{prec}#{func}", arg.map{|a| a.to_s}.join(",")])
+        NArrayCLoop::Scalar.new("#{ctype}", "#{prec}#{func}(\#{arg.map{|a| a.to_s}.join(",")})", @@kernel.current)
     end
 EOF
       end
     end
+
+
+    def self.current_kernel
+      @@kernel
+    end
+
 
 
     # private class
@@ -168,12 +182,14 @@ EOF
     class Block # abstract class
 
       attr_reader :idx, :depth
+      attr_accessor :scalar_num
 
       def initialize(parent)
         @parent = parent
         @idx = parent.idx
         @depth = parent.depth + 1
         @block = Array.new
+        @scalar_num = parent.scalar_num
         parent.current = self
         parent.append self
       end
@@ -214,6 +230,7 @@ EOF
         @parent = nil
         @depth = 0
         @idx = -1
+        @scalar_num = 0
         @block = Array.new
         @current = self
       end
@@ -247,6 +264,7 @@ EOF
         @idx = parent.idx + 1
         @openmp = openmp
         yield( NArrayCLoop::Index.new(@idx, min, max) )
+        parent.current = parent
       end
 
       def prefix
@@ -272,6 +290,7 @@ EOF
         @cond = cond
         @elseif = false
         yield
+        parent.current = parent
       end
 
       def prefix
@@ -376,7 +395,7 @@ EOF
       end
 
       ["<", "<=", ">", ">=", "=="].each do |op|
-        eval <<EOF
+        eval <<EOF, binding, __FILE__, __LINE__+1
       def #{op}(other)
         NArrayCLoop::Cond.new("\#{to_s} #{op} \#{other}")
       end
@@ -407,146 +426,127 @@ EOF
     end
 
 
-    class Ary
+    class Value # abstract class
 
-      @@ntype2ctype = {NArray::BYTE => "u_int8_t*",
-                       NArray::SINT => "int16_t*",
-                       NArray::LINT => "int32_t*",
-                       NArray::SFLOAT => "float*",
-                       NArray::DFLOAT => "double*",
-                       NArray::SCOMPLEX => "scomplex*",
-                       NArray::DCOMPLEX => "dcomplex*"}
+      def initialize(type, block)
+        @type = type
+        @block = block
+      end
+
+    end
+
+    class Scalar < Value
+
+      def initialize(type, value=nil, block=nil, define=nil)
+        super(type, block || NArrayCLoop.current_kernel)
+        @value = value.to_s
+        @define = define
+        scalar unless block
+      end
+
+      def -@
+        @value = "( -#{to_s} )"
+      end
+
+      def assign(other)
+        @value = other.to_s
+        scalar
+        self
+      end
+
+      %w(+ - * /).each do |op|
+        eval <<EOF, binding, __FILE__, __LINE__+1
+      def #{op}(other)
+        self.class.new(@type, "( \#{to_s} ) #{op} ( \#{other} )", @block)
+      end
+EOF
+      end
+
+      [">", ">=", "<", "<=", "=="].each do |op|
+        eval <<EOF, binding, __FILE__, __LINE__+1
+      def #{op}(other)
+        NArrayCLoop::Cond.new("( \#{to_s} ) #{op} ( \#{other} )")
+      end
+EOF
+      end
+
+      def scalar(type=nil)
+        type ||= @type
+        unless @define
+          i = ( @block.current.scalar_num += 1 )
+          v = "s#{i}"
+          @define = v
+          @block.current.append "#{type} #{v} = #{@value};"
+        else
+          @block.current.append "#{@define} = #{@value};"
+        end
+        return self.class.new(type, @value, @block, @define)
+      end
+
+      def ctype
+        @type
+      end
+
+      def to_s
+        @define || @value.to_s
+      end
+
+      def coerce(other)
+        if other.kind_of?(Numeric)
+          return [self.class.new(@type, other, @block), self]
+        else
+          super
+        end
+      end
+
+    end # class Scalar
+
+    class Ary < Value
+
+      @@ntype2ctype = {NArray::BYTE => "u_int8_t",
+                       NArray::SINT => "int16_t",
+                       NArray::LINT => "int32_t",
+                       NArray::SFLOAT => "float",
+                       NArray::DFLOAT => "double",
+                       NArray::SCOMPLEX => "scomplex",
+                       NArray::DCOMPLEX => "dcomplex"}
       if NArray.const_defined?(:LLINT)
-        @@ntype2ctype[NArray::LLINT] = "int64_t*"
+        @@ntype2ctype[NArray::LLINT] = "int64_t"
       end
 
       attr_reader :rank
 
-      def initialize(shape, rank, type, ops, block=nil)
+      def initialize(shape, rank, type, ary, block)
+        super(type, block)
         @shape = shape
         @rank = rank
-        @type = type
-        @ops = ops
-        @block = block
+        @ary = ary
         if @type==NArray::SCOMPLEX || @type==NArray::DCOMPLEX
           raise "complex is not supported at this moment"
         end
-      end
-
-      def -@
-        self.class.new(@shape, 0, @type, [:neg, @ops, nil])
       end
 
       def [](*idx)
         unless idx.length == @rank
           raise "number of idx != rank"
         end
-        self.class.new(@shape, 0, @type, [:slice, @ops, slice(*idx)])
+        NArrayCLoop::Scalar.new(ctype, "#{@ary}[#{slice(*idx)}]", @block)
       end
 
       def []=(*arg)
         idx = arg[0..-2]
         other = arg[-1]
-        unless idx.length == @rank
-          raise "number of idx != rank"
-        end
-        ops = [:slice, @ops, slice(*idx)]
-        case other
-        when Numeric
-          @block.current.append self.class.new(@shape, @rank, @type, [:set, ops, [:int,other]])
-        when self.class
-          @block.current.append self.class.new(@shape, @rank, @type, [:set, ops, other.ops])
-        else
-          raise ArgumentError, "invalid argument"
-        end
+        ary = self[*idx]
+        exec = "#{ary} = #{other};"
+        @block.current.append exec
         return nil
-      end
-
-      [
-        ["+", "add"],
-        ["-", "sub"],
-        ["*", "mul"],
-        ["/", "div"]
-      ].each do |m, op|
-        str = <<EOF
-      def #{m}(other)
-        binary_operation(other, :#{op})
-      end
-EOF
-        eval str
-      end
-
-      [">", ">=", "<", "<=", "=="].each do |op|
-        str = <<EOF
-      def #{op}(other)
-        unless @rank==0
-          raise "slice first"
-        end
-        NArrayCLoop::Cond.new("\#{to_s} #{op} \#{other}")
-      end
-EOF
-        eval str
-      end
-
-      def to_s
-        get_str(@ops)
       end
 
       def ctype
         @@ntype2ctype[@type]
       end
 
-      protected
-      def ops
-        @ops
-      end
-
-      @@twoop = {:add => "+", :sub => "-", :mul => "*", :div => "/"}
       private
-      def get_str(obj)
-        op = obj[0]
-        obj = obj[1..-1]
-        case op
-        when :slice
-          obj, idx = obj
-          obj = get_str(obj)
-          return "#{obj}[#{idx}]"
-        when :add, :sub, :mul, :div
-          o1, o2 = obj
-          o1 = get_str(o1)
-          o2 = get_str(o2)
-          return "( #{o1} #{@@twoop[op]} #{o2} )"
-        when :set
-          o1, o2 = obj
-          o1 = get_str(o1)
-          o2 = get_str(o2)
-          return "#{o1} = #{o2};"
-        when :int, :ary
-          return obj[0].to_s
-        when :math
-          func, arg = obj
-          return "#{func}(#{arg})"
-        when :neg
-          return "( -#{get_str(obj[0])} )"
-        else
-          raise "unexpected value: #{op} (#{op.class})"
-        end
-      end
-
-      def binary_operation(other, op)
-        unless @rank==0
-          raise "slice first"
-        end
-        case other
-        when Numeric
-          return self.class.new(@shape, 0, @type, [op, @ops, [:int,other]])
-        when self.class
-          return self.class.new(@shape, 0, @type, [op, @ops, other.ops])
-        else
-          raise ArgumentError, "invalid argument: #{other} (#{other.class})"
-        end
-      end
-
       def slice(*idx)
         if @rank == 0
           raise "rank is zero"
@@ -565,12 +565,9 @@ EOF
             if id > @shape[i]-1
               raise ArgumentError, "out of boundary"
             end
-          when NArrayCLoop::Ary
+          when NArrayCLoop::Scalar
             unless /int/ =~ id.ctype
-              raise ArgumentError, "must be interger type"
-            end
-            unless id.rank==0
-              raise ArgumentError, "rank must be 0"
+              raise ArgumentError, "must be interger type: #{id.ctype}"
             end
           else
             raise ArgumentError, "index is invalid: #{id} (#{id.class}) #{@rank}"
@@ -589,6 +586,8 @@ EOF
 
     end # class Ary
 
+
+
     class Cond
 
       def initialize(cond)
@@ -599,7 +598,7 @@ EOF
         ["and", "&&"],
         ["or", "||"]
       ].each do |m, op|
-        eval <<EOF
+        eval <<EOF, binding, __FILE__, __LINE__+1
       def #{m}(other)
         self.class.new("(\#{@cond}) #{op} (\#{other})")
       end
@@ -623,7 +622,7 @@ VALUE
 <%= func_name %>(VALUE self, VALUE rb_<%= args.join(", VALUE rb_") %>) {
 <% ars.each_with_index do |ary,i| %>
 <%   ctype = ary.ctype %>
-  <%= ctype %> v<%= i %> = NA_PTR_TYPE(rb_v<%= i %>, <%= ctype %>);
+  <%= ctype %>* v<%= i %> = NA_PTR_TYPE(rb_v<%= i %>, <%= ctype %>*);
 <% end %>
 <% @@idxmax.times do |i| %>
   int i<%= i %>;

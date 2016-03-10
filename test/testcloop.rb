@@ -16,55 +16,16 @@ class TestCLoop < Test::Unit::TestCase
     @y = NArray.lint(N,M).indgen(1)
   end
 
-  def test_add_lint
+  def test_arithmetic_array
     z = NArray.lint(N,M)
     NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
       c_loop(0,M-1) do |j|
         c_loop(0,N-1) do |i|
-          z[i,j] = x[i,j] + y[i,j]
+          z[i,j] = ( x[i,j] - y[i,j] ) * x[i,j]
         end
       end
     end
-    zr = @x + @y
-    assert_equal(zr, z)
-  end
-
-  def test_sub_lint
-    z = NArray.lint(N,M)
-    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
-      c_loop(0,M-1) do |j|
-        c_loop(0,N-1) do |i|
-          z[i,j] = x[i,j] - y[i,j]
-        end
-      end
-    end
-    zr = @x - @y
-    assert_equal(zr, z)
-  end
-
-  def test_mul_lint
-    z = NArray.lint(N,M)
-    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
-      c_loop(0,M-1) do |j|
-        c_loop(0,N-1) do |i|
-          z[i,j] = x[i,j] * y[i,j]
-        end
-      end
-    end
-    zr = @x * @y
-    assert_equal(zr, z)
-  end
-
-  def test_div_lint
-    z = NArray.lint(N,M)
-    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
-      c_loop(0,M-1) do |j|
-        c_loop(0,N-1) do |i|
-          z[i,j] = x[i,j] / y[i,j]
-        end
-      end
-    end
-    zr = @x / @y
+    zr = ( @x - @y ) * @x
     assert_equal(zr, z)
   end
 
@@ -161,15 +122,16 @@ class TestCLoop < Test::Unit::TestCase
     z2 = NArray.lint(M)
     NArrayCLoop.kernel(@x,@y,z1,z2) do |x,y,z1,z2|
       c_loop(0,M-1) do |j|
+        z2[j] = x[0,j]
         c_loop(1,N-1) do |i|
-          z1[i,j] = x[i-1,j] + y[i,j]
+          z1[i,j] = z2[j] + x[i-1,j] + y[i,j]
         end
         z2[j] = x[1,j] + y[0,j]
       end
     end
     z1r = NArray.lint(N,M)
     z2r = NArray.lint(M)
-    z1r[1..N-1,0..M-1] = @x[0..N-2,0..M-1] + @y[1..N-1,0..M-1]
+    z1r[1..N-1,0..M-1] = @x[0..0,0..M-1] + @x[0..N-2,0..M-1] + @y[1..N-1,0..M-1]
     z2r[0..M-1] = @x[1,0..M-1] + @y[0,0..M-1]
     assert_equal(z1r, z1)
     assert_equal(z2r, z2)
@@ -362,6 +324,27 @@ class TestCLoop < Test::Unit::TestCase
         zr[j] = zr[j] + @x[i,j]
       end
     end
+    assert_equal(zr, z)
+  end
+
+  def test_scalar
+    z = NArray.sfloat(M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        r = NArrayCLoop::Scalar.new("float", 0.0)
+        c_loop(0,N-1) do |i|
+          p = ( x[i,j] - y[i,j] ).scalar
+          q = ( x[i,j] + y[i,j] + 1 ).scalar("float")
+#          r = r + p / q
+          r.assign r + p / q
+        end
+        z[j] = r
+      end
+    end
+    p = @x - @y
+    q = ( @x + @y + 1 ).to_type(NArray::SFLOAT)
+    r = p / q
+    zr = r.sum(0)
     assert_equal(zr, z)
   end
 
