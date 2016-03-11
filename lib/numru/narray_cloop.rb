@@ -25,25 +25,19 @@ module NumRu
       @@header_path = path
     end
 
-
-    def self.kernel(*arys,&block)
+    def self.kernel(*narys, &block)
       @@kernel_num += 1
-      @@omp = false # true if openmp is enabled at least one loop
       na = -1
       args = []
-      @@kernel = NArrayCLoop::BlockMain.new
-      @@idxmax = 0
-      ars = arys.map do |ary|
+      kernel = NArrayCLoop::Kernel.new
+      arys = narys.map do |ary|
         na += 1
         vn = "v#{na}"
         args.push vn
-        NArrayCLoop::Ary.new(ary.shape, ary.rank, ary.typecode, vn, @@kernel)
+        NArrayCLoop::Ary.new(ary.shape, ary.rank, ary.typecode, vn, kernel)
       end
+      body = kernel.exec(*arys, &block)
 
-      self.module_exec(*ars,&block)
-      @@kernel.close
-
-      body = @@kernel.to_s
       func_name = "rb_narray_ext_#{@@kernel_num}"
       code = TEMPL_ccode.result(binding)
 
@@ -105,7 +99,7 @@ EOF
 
           # execute
           require "./narray_ext_#{@@kernel_num}.so"
-          NumRu::NArrayCLoop.send("c_func_#{@@kernel_num}", *arys)
+          NumRu::NArrayCLoop.send("c_func_#{@@kernel_num}", *narys)
         end
       end
 
@@ -113,96 +107,128 @@ EOF
     end
 
 
-    def self.c_loop(min, max, openmp=false, &block)
-      @@omp ||= openmp
-      parent = @@kernel.current
-      loop = NArrayCLoop::BlockLoop.new(parent, min, max, openmp, &block)
-      @@idxmax = [@@idxmax, loop.idx+1].max
-      return loop
-    end
-
-
-    def self.c_if(cond, &block)
-      parent = @@kernel.current
-      return NArrayCLoop::BlockIf.new(parent, cond, &block)
-    end
-
-    def self.c_break
-      @@kernel.current.append "break"
-    end
-
-
-    # math.h
-    %w(sin asin cos acos tan atan atan2
-       sinh asinh cosh acosh tanh atanh
-       exp exp2 expm1 frexp ldexp log log2 log10 log1p logb ilogb modf scalbn scalbln
-       pow sqrt fabs hypot cbrt
-       erf erfc gamma lgamma tgamma
-       cail floor nearbyint rint lrint llrint round lround llround trunc
-       fmod remainder remquo
-       copysign nextafter nexttoward
-       fdim fmax fmin
-       fma
-       j0 j1 jn y0 y1 yn).each do |func|
-      [
-        ["", "double"],
-        ["f", "float"]
-      ].each do |prec,ctype|
-        eval <<EOF, binding, __FILE__, __LINE__+1
-    def self.#{func}#{prec}(*arg)
-        NArrayCLoop::Scalar.new("#{ctype}", "#{func}#{prec}(\#{arg.map{|a| a.to_s}.join(",")})", @@kernel.current, arg)
-    end
-EOF
-      end
-    end
-
-    # stdlib.h
-    %w(abs).each do |func|
-      [
-        ["", "int"],
-        ["l", "long"],
-        ["ll", "long long"]
-      ].each do |prec,ctype|
-        eval <<EOF, binding, __FILE__, __LINE__+1
-    def self.#{prec}#{func}(*arg)
-        NArrayCLoop::Scalar.new("#{ctype}", "#{prec}#{func}(\#{arg.map{|a| a.to_s}.join(",")})", @@kernel.current, arg)
-    end
-EOF
-      end
-    end
-
-
-    def self.current_kernel
-      @@kernel
-    end
-
 
 
     # private class
 
+    class Kernel
+
+      attr_accessor :current
+      attr_reader :idxmax, :omp
+
+      def initialize
+        @idxmax = 0
+        @omp = false
+      end
+
+      def c_scalar(type, value=nil)
+        return NArrayCLoop::Scalar.new(type, value, current)
+      end
+
+      ["int", "long", "long long", "int32_t", "int64_t", "float", "double"].each do |type|
+        eval <<EOF, binding, __FILE__, __LINE__+1
+        def c_#{type.sub(" ","_")}(value=nil)
+          c_scalar("#{type}", value)
+        end
+EOF
+      end
+
+      def c_loop(min, max, openmp=false, &block)
+        @omp ||= openmp
+        loop = NArrayCLoop::BlockLoop.new(self, min, max, openmp, &block)
+        @idxmax = [@idxmax, loop.idx+1].max
+        return loop
+      end
+
+      def c_if(cond, &block)
+        return NArrayCLoop::BlockIf.new(self, cond, &block)
+      end
+
+      def c_break
+        current.append "break"
+      end
+
+      # math.h
+      %w(sin asin cos acos tan atan atan2
+         sinh asinh cosh acosh tanh atanh
+         exp exp2 expm1 frexp ldexp log log2 log10 log1p logb ilogb modf scalbn scalbln
+         pow sqrt fabs hypot cbrt
+         erf erfc gamma lgamma tgamma
+         cail floor nearbyint rint lrint llrint round lround llround trunc
+         fmod remainder remquo
+         copysign nextafter nexttoward
+         fdim fmax fmin
+         fma
+         j0 j1 jn y0 y1 yn).each do |func|
+        [
+          ["", "double"],
+          ["f", "float"]
+        ].each do |prec,ctype|
+          eval <<EOF, binding, __FILE__, __LINE__+1
+          def #{func}#{prec}(*arg)
+            NArrayCLoop::Scalar.new("#{ctype}", "#{func}#{prec}(\#{arg.map{|a| a.to_s}.join(",")})", current, arg)
+          end
+EOF
+        end
+      end # math.h
+
+      # stdlib.h
+      %w(abs).each do |func|
+        [
+          ["", "int"],
+          ["l", "long"],
+          ["ll", "long long"]
+        ].each do |prec,ctype|
+          eval <<EOF, binding, __FILE__, __LINE__+1
+          def #{prec}#{func}(*arg)
+            NArrayCLoop::Scalar.new("#{ctype}", "#{prec}#{func}(\#{arg.map{|a| a.to_s}.join(",")})", current, arg)
+          end
+EOF
+        end
+      end # stdlib.h
+
+      def exec(*args, &block)
+        begin
+          main = NArrayCLoop::BlockMain.new(self)
+          @current = main
+          instance_exec(*args, &block)
+        ensure
+          main.close
+        end
+        main.to_s
+      end
+
+    end # class Kernel
+
+
     class Block # abstract class
 
-      attr_reader :idx, :depth
-      attr_accessor :scalar_num
+      attr_reader :idx, :depth, :hook
+      attr_accessor :scalar_num, :last
 
-      def initialize(parent, *arg)
-        @parent = parent
-        @depth = parent.depth + 1
-        @idx ||= parent.idx
+      def initialize(kernel, *arg)
+        @kernel = kernel
+        @parent = kernel.current
+        @depth = @parent.depth + 1
+        @idx ||= @parent.idx
         @block = Array.new
         @svs = Array.new
-        @scalar_num = parent.scalar_num
-        parent.current = self
-        parent.append self
-        yield(*arg)
+        @scalar_num = @parent.scalar_num
+        kernel.current = self
+        @parent.append self
+        @last = nil
+        @hook = get_hook
+        begin
+          set_trace_func @hook
+          yield(*arg)
+        ensure
+          set_trace_func @parent.hook
+        end
         close
       end
 
-      def current=(block)
-        @parent.current = block
-      end
       def current
-        @parent.current
+        @kernel.current
       end
 
       def append(exp)
@@ -226,27 +252,40 @@ EOF
         return str
       end
 
-      def define_scalar(scalar)
-        @svs.push scalar
-      end
-
-      def use_scalar(scalar)
-        @svs.delete_if{|sv| sv.object_id == scalar.object_id}
+      def define_scalar(name)
+        @svs.push name
       end
 
       def close
-        @parent.current = @parent unless type == :main
-        unless @svs.empty?
+        set_trace_func(nil) if type == :main
+        @last[1].scalar(@last[0]) if @last
+        @kernel.current = @parent
+        svs = Array.new
+        @svs.each do |sv|
+          svs.push sv unless sv.use
+        end
+        unless svs.empty?
           raise <<EOF
 In block
 <<< block begin >>>
 #{self}
 <<< block end >>>
 scalar variable(s) is(are) defined but not used:
-  #{@svs.map{|s| s.inspect}.join("\n  ")}
+  #{svs.map{|s| s.to_s}.join("\n  ")}
 Do not use '=' to asigin value to scalar variable.
 Use #assign in stead.
 EOF
+        end
+      end
+
+      def get_hook
+        @hook = lambda do |event, file, line, id, binding, klass|
+          if file != __FILE__ && event=="line"
+            if @last
+              @last[1].scalar(@last[0])
+              @last = nil
+            end
+          end
         end
       end
 
@@ -254,21 +293,17 @@ EOF
 
     class BlockMain < Block
 
-      def initialize
+      def initialize(kernel)
+        @kernel = kernel
         @parent = nil
         @depth = 0
         @idx = -1
         @scalar_num = 0
         @block = Array.new
         @svs = Array.new
-        @current = self
-      end
-
-      def current=(block)
-        @current = block
-      end
-      def current
-        @current
+        kernel.current = self
+        @hook = get_hook
+        set_trace_func @hook
       end
 
       def type
@@ -286,14 +321,15 @@ EOF
 
     class BlockLoop < Block
 
-      def initialize(parent, min, max, openmp, &block)
+      def initialize(kernel, min, max, openmp, &block)
         @min = min
         @max = max
-        @idx = parent.idx + 1
+        min.use = true if NArrayCLoop::Scalar === min
+        max.use = true if NArrayCLoop::Scalar === max
+        @idx = kernel.current.idx + 1
         @openmp = openmp
-        min.use if NArrayCLoop::Scalar === min
-        max.use if NArrayCLoop::Scalar === max
-        super(parent, NArrayCLoop::Index.new(@idx, min, max), &block)
+        kernel.current.last = nil
+        super(kernel, NArrayCLoop::Index.new(@idx, min, max), &block)
       end
 
       def prefix
@@ -311,13 +347,13 @@ EOF
 
     class BlockIf < Block
 
-      def initialize(parent, cond, &block)
-        unless parent.idx >= 0
+      def initialize(kernel, cond, &block)
+        unless kernel.current.idx >= 0
           raise "c_if must be in a loop"
         end
         @cond = cond
         @elseif = false
-        super(parent, &block)
+        super(kernel, &block)
       end
 
       def prefix
@@ -330,12 +366,12 @@ EOF
 
       def elseif(cond, &block)
         @elseif = true
-        NArrayCLoop::BlockElseIf.new(@parent, cond, &block)
+        NArrayCLoop::BlockElseIf.new(@kernel, cond, &block)
       end
 
       def else(&block)
         @elseif = true
-        NArrayCLoop::BlockElse.new(@parent, &block)
+        NArrayCLoop::BlockElse.new(@kernel, &block)
       end
 
       def type
@@ -346,10 +382,10 @@ EOF
 
     class BlockElseIf < Block
 
-      def initialize(parent, cond, &block)
+      def initialize(kernel, cond, &block)
         @cond = cond
         @elseif = false
-        super(parent, &block)
+        super(kernel, &block)
       end
 
       def prefix
@@ -362,12 +398,12 @@ EOF
 
       def elseif(cond, &block)
         @elseif = true
-        NArrayCLoop::BlockElseIf.new(@parent, cond, &block)
+        NArrayCLoop::BlockElseIf.new(@kernel, cond, &block)
       end
 
       def else(&block)
         @elseif = true
-        NArrayCLoop::BlockElse.new(@parent, &block)
+        NArrayCLoop::BlockElse.new(@kernel, &block)
       end
 
       def type
@@ -378,8 +414,8 @@ EOF
 
     class BlockElse < Block
 
-      def initialize(parent, &block)
-        super(parent, &block)
+      def initialize(kernel, &block)
+        super(kernel, &block)
       end
 
       def prefix
@@ -422,7 +458,7 @@ EOF
       ["<", "<=", ">", ">=", "=="].each do |op|
         eval <<EOF, binding, __FILE__, __LINE__+1
       def #{op}(other)
-        other.use if NArrayCLoop::Scalar === other
+        other.use = true if NArrayCLoop::Scalar === other
         NArrayCLoop::Cond.new("\#{to_s} #{op} \#{other}")
       end
 EOF
@@ -467,9 +503,7 @@ EOF
 
     class Scalar < Value
 
-      def self.[](type, value=nil)
-        self.new(type, value, NArrayCLoop.current_kernel).scalar
-      end
+      attr_accessor :use
 
       def initialize(type, value, block, parents=[], define=nil)
         super(type, block)
@@ -481,23 +515,29 @@ EOF
         end
         @define = define
         @parents = parents
+        @use = false
+        push_obj(self)
       end
 
       def -@
         @value = "( -#{to_s} )"
+        push_obj(self)
       end
 
       def assign(other)
         @value = other.to_s
-        other.use(self) if NArrayCLoop::Scalar === other
         @block.current.append "#{@define} = #{@value};"
+        @block.current.last = nil
         return nil
       end
 
       %w(+ - * /).each do |op|
         eval <<EOF, binding, __FILE__, __LINE__+1
       def #{op}(other)
-        self.class.new(@type, "( \#{to_s} ) #{op} ( \#{other} )", @block, [self,other])
+        obj = self.class.new(@type, "( \#{to_s} ) #{op} ( \#{other} )", @block, [self,other])
+        self.use = true
+        other.use = true if self.class === other
+        push_obj(obj)
       end
 EOF
       end
@@ -505,24 +545,30 @@ EOF
       [">", ">=", "<", "<=", "=="].each do |op|
         eval <<EOF, binding, __FILE__, __LINE__+1
       def #{op}(other)
-        self.use
-        other.use if NArrayCLoop::Scalar === other
+        self.use = true
+        other.use = true if self.class === other
+        @block.current.last = nil
         NArrayCLoop::Cond.new("( \#{to_s} ) #{op} ( \#{other} )")
       end
 EOF
       end
 
-      def scalar(type=nil)
-        type ||= @type
-        i = ( @block.current.scalar_num += 1 )
-        v = "s#{i}"
-        @block.current.append "#{type} #{v} = #{@value};"
-        obj = self.class.new(type, @value, @block, [self], v)
-        @block.current.define_scalar obj
-        (@parents + [self]).each do |obj|
-          obj.use if NArrayCLoop::Scalar === obj
-        end
+      def push_obj(obj)
+        @block.current.last = [@block.current, obj]
         return obj
+      end
+
+      def scalar(block)
+        i = ( block.current.scalar_num += 1 )
+        v = "s#{i}"
+        if @value
+          block.current.append "#{@type} #{v} = #{@value};"
+        else
+          block.current.append "#{@type} #{v};"
+        end
+        @define = v
+        block.define_scalar(self)
+        @use = false
       end
 
       def ctype
@@ -543,16 +589,6 @@ EOF
 
       def define
         @define
-      end
-
-      def use(except=nil)
-        (@parents+[self]).each do |obj|
-          if NArrayCLoop::Scalar === obj
-            next if except && obj.object_id == except.object_id
-            obj.use(except) unless obj.object_id == self.object_id
-            @block.current.use_scalar(obj) if obj.define
-          end
-        end
       end
 
       def inspect
@@ -599,7 +635,7 @@ EOF
         ary = self[*idx]
         exec = "#{ary} = #{other};"
         @block.current.append exec
-        other.use if NArrayCLoop::Scalar === other
+        @block.current.last = nil
         return nil
       end
 
@@ -681,11 +717,11 @@ EOF
 
 VALUE
 <%= func_name %>(VALUE self, VALUE rb_<%= args.join(", VALUE rb_") %>) {
-<% ars.each_with_index do |ary,i| %>
+<% arys.each_with_index do |ary,i| %>
 <%   ctype = ary.ctype %>
   <%= ctype %>* v<%= i %> = NA_PTR_TYPE(rb_v<%= i %>, <%= ctype %>*);
 <% end %>
-<% @@idxmax.times do |i| %>
+<% kernel.idxmax.times do |i| %>
   int i<%= i %>;
 <% end %>
 <%= body %>
@@ -698,7 +734,7 @@ Init_narray_ext_<%= @@kernel_num %>()
 {
   VALUE mNumRu = rb_define_module("NumRu");
   VALUE mNArrayCLoop = rb_define_module_under(mNumRu, "NArrayCLoop");
-  rb_define_module_function(mNArrayCLoop, "c_func_<%= @@kernel_num %>", <%= func_name %>, <%= ars.length %>);
+  rb_define_module_function(mNArrayCLoop, "c_func_<%= @@kernel_num %>", <%= func_name %>, <%= arys.length %>);
 }
 EOF
 
@@ -733,7 +769,7 @@ unless find_header("narray.h", header_path)
 end
 
 # openmp enable
-<% if @@omp %>
+<% if kernel.omp %>
 <%   if @@omp_opt %>
 omp_opt = <%= @@omp_opt %>
 <%   else %>

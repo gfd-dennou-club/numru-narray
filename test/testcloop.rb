@@ -332,10 +332,10 @@ class TestCLoop < Test::Unit::TestCase
     assert_raise(RuntimeError) do
       NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
         c_loop(0,M-1) do |j|
-          r = NArrayCLoop::Scalar["float", 0.0]
+          r = c_scalar("float", 0.0)
           c_loop(0,N-1) do |i|
-            p = ( x[i,j] - y[i,j] ).scalar
-            q = ( x[i,j] + y[i,j] + 1 ).scalar("float")
+            p = x[i,j] - y[i,j]
+            q = c_float( x[i,j] + y[i,j] + 1 )
             r = r + p / q
           end
           z[j] = r
@@ -344,10 +344,10 @@ class TestCLoop < Test::Unit::TestCase
     end
     NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
       c_loop(0,M-1) do |j|
-        r = NArrayCLoop::Scalar["float", 0.0]
+        r = c_scalar("float", 0.0)
         c_loop(0,N-1) do |i|
-          p = ( x[i,j] - y[i,j] ).scalar
-          q = ( x[i,j] + y[i,j] + 1 ).scalar("float")
+          p = x[i,j] - y[i,j]
+          q = c_float( x[i,j] + y[i,j] + 1 )
           r.assign r + p / q
         end
         z[j] = r
@@ -362,27 +362,28 @@ class TestCLoop < Test::Unit::TestCase
 
   def test_scalar_loop_range
     z = NArray.sint(M)
+    min = NArray.sint(1)
     assert_raise(RuntimeError) do
-      NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      NArrayCLoop.kernel(@x,@y,min,z) do |x,y,min,z|
         c_loop(0,M-1) do |j|
-          imax = NArrayCLoop::Scalar["int", 0]
+          imax = c_int(0)
           c_if ( x[0,j] < N ) do
             imax = x[0,j]
           end
-          c_loop(0,imax) do |i|
+          c_loop(min[0],imax) do |i|
             z[j] = z[j] + y[i,j]
           end
         end
       end
     end
-    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+    NArrayCLoop.kernel(@x,@y,min,z) do |x,y,min,z|
       c_loop(0,M-1) do |j|
-        imax = NArrayCLoop::Scalar["int", 0]
+        imax = c_int(0)
         c_if ( x[0,j] < N ) do
           imax.assign x[0,j]
         end
-        r = NArrayCLoop::Scalar["int", 0]
-        c_loop(0,imax) do |i|
+        r = c_int(0)
+        c_loop(min[0],imax) do |i|
           r.assign r + y[i,j]
         end
         z[j] = r
