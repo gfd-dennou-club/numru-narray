@@ -137,6 +137,21 @@ class TestCLoop < Test::Unit::TestCase
     assert_equal(z2r, z2)
   end
 
+  def test_negative_index
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          ii = N-1 - i
+          z[ii,j] = x[ii,j] + y[i,j]
+        end
+      end
+    end
+    zr = NArray.lint(N,M)
+    zr[-1..0,true] = @x[-1..0,true] + @y[true,true]
+    assert_equal(zr, z)
+  end
+
   def test_openmp
     z = NArray.lint(N,M)
     NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
@@ -263,6 +278,23 @@ class TestCLoop < Test::Unit::TestCase
     assert_equal(zr, z)
   end
 
+  def test_if_break
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          c_if( i > 2 ) do
+            c_break
+          end
+          z[i,j] = x[i,j] + y[i,j]
+        end
+      end
+    end
+    zr = NArray.lint(N,M)
+    zr[0..2,true] = @x[0..2,true] + @y[0..2,true]
+    assert_equal(zr, z)
+  end
+
   def test_abs
     z = NArray.llint(N,M)
     NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
@@ -344,7 +376,8 @@ class TestCLoop < Test::Unit::TestCase
     end
     NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
       c_loop(0,M-1) do |j|
-        r = c_scalar("float", 0.0)
+        r = c_scalar("float")
+        r.assign 0.0
         c_loop(0,N-1) do |i|
           p = x[i,j] - y[i,j]
           q = c_float( x[i,j] + y[i,j] + 1 )
@@ -357,6 +390,21 @@ class TestCLoop < Test::Unit::TestCase
     q = ( @x + @y + 1 ).to_type(NArray::SFLOAT)
     r = p / q
     zr = r.sum(0)
+    assert_equal(zr, z)
+  end
+
+  def test_scalar_math
+    z = NArray.sfloat(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          p = x[i,j] - y[i,j]
+          q = abs( p )
+          z[i,j] = q
+        end
+      end
+    end
+    zr = (@x - @y).abs
     assert_equal(zr, z)
   end
 

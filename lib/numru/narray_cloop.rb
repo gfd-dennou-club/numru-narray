@@ -80,7 +80,11 @@ module NumRu
             print sep, File.read("log"), "\n"
 
             print sep, "# C source (#{fname})\n"
-            print sep, File.read(fname), "\n"
+            src = Array.new
+            File.read(fname).split("\n").each_with_index do |l,i|
+              src.push "%04d:  #{l}\n"%i
+            end
+            print sep, src.join, "\n"
 
             print "\n"
             raise("compile error")
@@ -145,7 +149,7 @@ EOF
       end
 
       def c_break
-        current.append "break"
+        current.append "break;"
       end
 
       # math.h
@@ -166,6 +170,9 @@ EOF
         ].each do |prec,ctype|
           eval <<EOF, binding, __FILE__, __LINE__+1
           def #{func}#{prec}(*arg)
+            arg.each do |a|
+              a.use = true if NArrayCLoop::Scalar === a
+            end
             NArrayCLoop::Scalar.new("#{ctype}", "#{func}#{prec}(\#{arg.map{|a| a.to_s}.join(",")})", current, arg)
           end
 EOF
@@ -181,6 +188,9 @@ EOF
         ].each do |prec,ctype|
           eval <<EOF, binding, __FILE__, __LINE__+1
           def #{prec}#{func}(*arg)
+            arg.each do |a|
+              a.use = true if NArrayCLoop::Scalar === a
+            end
             NArrayCLoop::Scalar.new("#{ctype}", "#{prec}#{func}(\#{arg.map{|a| a.to_s}.join(",")})", current, arg)
           end
 EOF
@@ -430,29 +440,34 @@ EOF
 
     class Index
 
-      def initialize(idx,min,max,shift=nil)
+      def initialize(idx,min,max,shift=0,fact=1)
         @idx = idx
         @min = min
         @max = max
         @shift = shift
+        @fact = fact
       end
 
       def +(i)
         case i
         when Fixnum
-          NArrayCLoop::Index.new(@idx,@min,@max,i)
+          NArrayCLoop::Index.new(@idx,@min,@max,@shift+i,@fact)
         else
-          raise ArgumentError, "invalid argument"
+          raise ArgumentError, "invalid argument: #{i.class}"
         end
       end
 
       def -(i)
         case i
         when Fixnum
-          NArrayCLoop::Index.new(@idx,@min,@max,-i)
+          NArrayCLoop::Index.new(@idx,@min,@max,@shift-i,@fact)
         else
-          raise ArgumentError, "invalid argument"
+          raise ArgumentError, "invalid argument: #{i.class}"
         end
+      end
+
+      def -@
+        NArrayCLoop::Index.new(@idx,@min,@max,@shift,-1)
       end
 
       ["<", "<=", ">", ">=", "=="].each do |op|
@@ -465,26 +480,64 @@ EOF
       end
 
       def to_s
-        if @shift.nil?
-          "i#{@idx}"
-        elsif @shift > 0
-          "i#{@idx}+#{@shift}"
-        else # < 0
-          "i#{@idx}#{@shift}"
+        s = "i#{@idx}"
+        unless @fact == 1
+          s = "#{s}*#{@fact}"
         end
+        unless @shift == 0
+          s = "#{s}+#{@shift}"
+        end
+        return s
       end
       alias :inspect :to_s
 
       def idx
         @idx
       end
+
       def min
-        @shift ? [@min, @min+@shift].min : @min
+        [@min*@fact, @max*@fact].min + @shift
       end
       def max
-        @shift ? [@max, @max+@shift].max : @max
+        [@min*@fact, @max*@fact].max + @shift
       end
 
+      def coerce(other)
+        if other.kind_of?(Fixnum)
+          return [NArrayCLoop::Int.new(other), self]
+        else
+          super
+        end
+      end
+
+    end
+
+    class Int
+      def initialize(value)
+        @value = value
+      end
+
+      def +(i)
+        case i
+        when Fixnum
+          self.class.new(@value + i)
+        when NArrayCLoop::Index
+          i + @value
+        else
+          raise ArgumentError, "invalid argument"
+        end
+      end
+
+      def -(i)
+        case i
+        when Fixnum
+          self.class.new(@value - i)
+        when NArrayCLoop::Index
+          -i + @value
+        else
+          raise ArgumentError, "invalid argument"
+        end
+      end
     end
 
 
@@ -561,10 +614,10 @@ EOF
       def scalar(block)
         i = ( block.current.scalar_num += 1 )
         v = "s#{i}"
-        if @value
-          block.current.append "#{@type} #{v} = #{@value};"
-        else
+        if @value.empty?
           block.current.append "#{@type} #{v};"
+        else
+          block.current.append "#{@type} #{v} = #{@value};"
         end
         @define = v
         block.define_scalar(self)
@@ -634,6 +687,7 @@ EOF
         other = arg[-1]
         ary = self[*idx]
         exec = "#{ary} = #{other};"
+        other.use = true if NArrayCLoop::Scalar === other
         @block.current.append exec
         @block.current.last = nil
         return nil
@@ -654,8 +708,11 @@ EOF
         idx.each_with_index do |id,i|
           case id
           when NArrayCLoop::Index
-            if (Fixnum===id.min && id.min < 0) || (Fixnum===id.max && id.max > @shape[i]-1)
-              raise ArgumentError, "out of boundary"
+            if Fixnum===id.min && id.min < 0
+              raise ArgumentError, "out of boundary: #{id.min} < 0"
+            end
+            if Fixnum===id.max && id.max > @shape[i]-1
+              raise ArgumentError, "out of boundary: #{id.max} > #{@shape[i]-1}"
             end
           when Fixnum
             idx[i] = id + @shape[i] if id < 0
