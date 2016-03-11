@@ -281,11 +281,11 @@ class TestCLoop < Test::Unit::TestCase
     NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
       c_loop(0,M-1) do |j|
         c_loop(0,N-1) do |i|
-          z[i,j] = exp(x[i,j]) + atan2f(x[i,j], y[i,j])
+          z[i,j] = exp(x[i,j]) + atan2(x[i,j], y[i,j])
         end
       end
     end
-    zr = NMath.exp(@x.to_type(NArray::DFLOAT)) + NMath.atan2(@x.to_type(NArray::SFLOAT),@y.to_type(NArray::SFLOAT))
+    zr = NMath.exp(@x.to_type(NArray::DFLOAT)) + NMath.atan2(@x.to_type(NArray::DFLOAT),@y.to_type(NArray::DFLOAT))
     assert_equal(zr, z)
   end
 
