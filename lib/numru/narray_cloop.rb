@@ -46,7 +46,11 @@ module NumRu
         print sep
         print "# C source\n"
         print sep
-        print code, "\n"
+        src = Array.new
+        code.split("\n").each_with_index do |l,i|
+          src.push "%04d:  #{l}\n"%i
+        end
+        print sep, src.join, "\n"
       end
 
       # save file and compile
@@ -81,7 +85,7 @@ module NumRu
 
             print sep, "# C source (#{fname})\n"
             src = Array.new
-            File.read(fname).split("\n").each_with_index do |l,i|
+            code.split("\n").each_with_index do |l,i|
               src.push "%04d:  #{l}\n"%i
             end
             print sep, src.join, "\n"

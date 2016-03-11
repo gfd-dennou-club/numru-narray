@@ -82,6 +82,21 @@ class TestCLoop < Test::Unit::TestCase
     assert_equal(zr, z)
   end
 
+  def test_multi_line
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          z[i,j] = ( x[i,j] - y[i,j] ) / (y[i,j] + 1) \
+                 - ( x[i,j] + y[i,j] ) * x[i,j] \
+                 + ( x[i,j] * y[i,j] )
+        end
+      end
+    end
+    zr = ( @x - @y ) / ( @y + 1 ) - ( @x + @y ) * @x + ( @x * @y )
+    assert_equal(zr, z)
+  end
+
   def test_shift
     z = NArray.lint(N,M)
     NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
