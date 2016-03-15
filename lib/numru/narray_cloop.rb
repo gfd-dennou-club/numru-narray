@@ -48,7 +48,7 @@ module NumRu
         print sep
         src = Array.new
         code.split("\n").each_with_index do |l,i|
-          src.push "%04d:  #{l}\n"%i
+          src.push "%04d:  %s\n"%([i,l])
         end
         print sep, src.join, "\n"
       end
@@ -156,6 +156,10 @@ EOF
         current.append "break;"
       end
 
+      def c_continue
+        current.append "continue;"
+      end
+
       # math.h
       %w(sin asin cos acos tan atan atan2
          sinh asinh cosh acosh tanh atanh
@@ -200,6 +204,39 @@ EOF
 EOF
         end
       end # stdlib.h
+
+      def c_print(*args)
+        fmt = Array.new
+        val = Array.new
+        args.each do |arg|
+          case arg
+          when String
+            fmt.push "%s"
+            val.push "\"#{arg}\""
+          when Fixnum
+            fmt.push "%d"
+            val.push arg.to_s
+          when Float
+            fmt.push "%e"
+            val.push arg.to_s
+          when NArrayCLoop::Index
+            fmt.push "%d"
+            val.push arg.to_s
+          when NArrayCLoop::Scalar
+            case arg.ctype
+            when /int/
+              fmt.push "%d"
+            when "float", "double"
+              fmt.push "%e"
+            end
+            val.push arg.to_s
+          else
+            raise "invalid type: #{arg}"
+          end
+        end
+        current.append "printf(\"#{fmt.join(', ')}\\n\", #{val.join(', ')});"
+        current.last = nil
+      end
 
       def exec(*args, &block)
         begin
@@ -583,6 +620,7 @@ EOF
 
       def assign(other)
         @value = other.to_s
+        other.use = true if self.class === other
         @block.current.append "#{@define} = #{@value};"
         @block.current.last = nil
         return nil
