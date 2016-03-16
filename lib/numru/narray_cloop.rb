@@ -31,6 +31,12 @@ module NumRu
       args = []
       kernel = NArrayCLoop::Kernel.new
       arys = narys.map do |ary|
+        case ary
+        when NArray
+          # OK
+        else
+          raise "#{ary.class} is not supported."
+        end
         na += 1
         vn = "v#{na}"
         args.push vn
