@@ -10,9 +10,16 @@
 */
 #define NARRAY_C
 #include <ruby.h>
-#include "ruby/version.h"
+#include <version.h>
 #include "narray.h"
 #include "narray_local.h"
+
+#ifndef RUBY_API_VERSION
+#define RUBY_API_VERSION_CODE (RUBY_VERSION_MAJOR*10000+RUBY_VERSION_MINOR*100+RUBY_VERSION_TEENY)
+#define RUBY_API_VERSION_MAJOR RUBY_VERSION_MAJOR
+#define RUBY_API_VERSION_MINOR RUBY_VERSION_MINOR
+#define RUBY_API_VERSION_TEENY RUBY_VERSION_TEENY
+#endif
 
 /* global variables within this module */
 VALUE cNArray, cNArrayScalar, cComplex;
