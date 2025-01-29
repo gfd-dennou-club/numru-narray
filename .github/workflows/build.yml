@@ -22,8 +22,8 @@ jobs:
       - name: Build and Install
         run: |
           gem install --no-document bundler
-          gem build numo-narray.gemspec
-          gem install numo-narray-*.gem
+          gem build numru-narray.gemspec
+          gem install numru-narray-*.gem
           bundle install
       - name: Tests
         run: rake test
