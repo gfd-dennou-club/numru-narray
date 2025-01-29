@@ -1,5 +1,6 @@
-require 'numru/narray'
-include NumRu
+require_relative "test_helper"
+
+puts "How to test randomn?"
 
 def test a
   print a," #=> "
