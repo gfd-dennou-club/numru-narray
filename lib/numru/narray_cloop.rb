@@ -219,7 +219,7 @@ EOF
           when String
             fmt.push "%s"
             val.push "\"#{arg}\""
-          when Fixnum
+          when Integer
             fmt.push "%d"
             val.push arg.to_s
           when Float
@@ -497,7 +497,7 @@ EOF
 
       def +(i)
         case i
-        when Fixnum
+        when Integer
           NArrayCLoop::Index.new(@idx,@min,@max,@shift+i,@fact)
         else
           raise ArgumentError, "invalid argument: #{i.class}"
@@ -506,7 +506,7 @@ EOF
 
       def -(i)
         case i
-        when Fixnum
+        when Integer
           NArrayCLoop::Index.new(@idx,@min,@max,@shift-i,@fact)
         else
           raise ArgumentError, "invalid argument: #{i.class}"
@@ -550,7 +550,7 @@ EOF
       end
 
       def coerce(other)
-        if other.kind_of?(Fixnum)
+        if other.kind_of?(Integer)
           return [NArrayCLoop::Int.new(other), self]
         else
           super
@@ -566,7 +566,7 @@ EOF
 
       def +(i)
         case i
-        when Fixnum
+        when Integer
           self.class.new(@value + i)
         when NArrayCLoop::Index
           i + @value
@@ -577,7 +577,7 @@ EOF
 
       def -(i)
         case i
-        when Fixnum
+        when Integer
           self.class.new(@value - i)
         when NArrayCLoop::Index
           -i + @value
@@ -756,13 +756,13 @@ EOF
         idx.each_with_index do |id,i|
           case id
           when NArrayCLoop::Index
-            if Fixnum===id.min && id.min < 0
+            if Integer===id.min && id.min < 0
               raise ArgumentError, "out of boundary: #{id.min} < 0"
             end
-            if Fixnum===id.max && id.max > @shape[i]-1
+            if Integer===id.max && id.max > @shape[i]-1
               raise ArgumentError, "out of boundary: #{id.max} > #{@shape[i]-1}"
             end
-          when Fixnum
+          when Integer
             idx[i] = id + @shape[i] if id < 0
             if id > @shape[i]-1
               raise ArgumentError, "out of boundary"

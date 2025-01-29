@@ -1249,6 +1249,7 @@ void
     /* define NArray class */
     mNumRu = rb_define_module("NumRu");
     cNArray = rb_define_class_under(mNumRu, "NArray", rb_cObject);
+    rb_undef_alloc_func(cNArray);
 
     /* class methods */
     rb_define_singleton_method(cNArray,"new",na_s_new,-1);
