@@ -1,6 +1,6 @@
 require_relative "test_helper"
 require "numru/narray_cloop"
-NArrayCLoop.header_path = File.expand_path(File.dirname(__FILE__)) + "/../lib/numru/narray"
+NArrayCLoop.header_path = File.expand_path(File.dirname(__FILE__)) + "/../ext/numru/narray"
 class TestCLoop < Test::Unit::TestCase
 
   N = 10
