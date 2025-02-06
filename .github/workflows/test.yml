@@ -24,13 +24,12 @@ jobs:
           bundler-cache: true
       - name: Build and install
         run: |
-          gem build numru-narray.gemspec
-          gem install numru-narray-*.gem
           bundle install
+          rake gem
+          gem install pkg/numru-narray-*.gem
       - name: Tests
         run: |
-          bundle exec rake test
-
+          rake test
 # MRI:
 #   name: ${{ matrix.os }} ruby-${{ matrix.ruby }}
 #   runs-on: ${{ matrix.os }}
