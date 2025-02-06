@@ -18,22 +18,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install dependencies
-        run: |
-          sudo apt update
-          sudo apt install -y rake-compiler
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby-version }}
           bundler-cache: true
-      - name: Build and install
-        run: |
-          bundle install
-          bundle exec rake gem
-          gem install pkg/numru-narray-*.gem
       - name: Tests
         run: |
-          rake test
+          bundle install
+          bundle exec rake compile -- --openmp=-fopenmp
+          bundle exec rake test
+          bundle exec rake package
+          gem install pkg/numru-narray-*.gem
+          ruby test/test_all.rb
 # MRI:
 #   name: ${{ matrix.os }} ruby-${{ matrix.ruby }}
 #   runs-on: ${{ matrix.os }}
