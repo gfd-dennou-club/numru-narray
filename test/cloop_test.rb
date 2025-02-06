@@ -1,6 +1,26 @@
 require_relative "test_helper"
 require "numru/narray_cloop"
-NArrayCLoop.header_path = File.expand_path(File.dirname(__FILE__)) + "/../ext/numru/narray"
+
+require "rubygems"
+# Hmm...
+gem_path = nil
+if Gem::Specification.respond_to?(:find_by_name)
+  if spec = Gem::Specification.find_by_name("numru-narray")
+    gem_path = spec.full_gem_path
+  end
+else
+  if spec = Gem.source_index.find_name("numru-narray").any?
+    gem_path = spec.full_gem_path
+  end
+end
+if gem_path
+  NArrayCLoop.header_path =  File.join(gem_path, "ext", "numru", "narray")
+else
+  # execute rake test without gem install
+  NArrayCLoop.header_path = File.expand_path(File.dirname(__FILE__)) + "/../ext/numru/narray"
+end
+
+
 class TestCLoop < Test::Unit::TestCase
 
   N = 10
