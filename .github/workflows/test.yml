@@ -28,6 +28,7 @@ jobs:
           gem install numru-narray-*.gem
           bundle install
       - name: Tests
+        run: |
           bundle exec rake test
 
 # MRI:
