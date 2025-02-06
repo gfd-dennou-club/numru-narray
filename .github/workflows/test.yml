@@ -25,11 +25,11 @@ jobs:
       - name: Build and install
         run: |
           bundle install
-          rake gem
+          bundle exec rake gem
           gem install pkg/numru-narray-*.gem
       - name: Tests
         run: |
-          rake test
+          bundle exec rake test
 # MRI:
 #   name: ${{ matrix.os }} ruby-${{ matrix.ruby }}
 #   runs-on: ${{ matrix.os }}
