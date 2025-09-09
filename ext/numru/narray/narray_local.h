@@ -23,9 +23,9 @@ struct slice {
   na_shape_t *idx;  /* NULL if normal step */
 };
 
-typedef void (*na_setfunc_t[NA_NTYPES][NA_NTYPES]) ();
+typedef void (*na_setfunc_t[NA_NTYPES][NA_NTYPES]) (size_t, void*, size_t, void*, size_t);
 typedef void (*na_func_t[NA_NTYPES]) ();
-typedef void (*na_ufunc_t[NA_NTYPES]) ();
+typedef void (*na_ufunc_t[NA_NTYPES]) (size_t, void*, size_t, int, na_shape_t);
 typedef void (*na_bifunc_t[NA_NTYPES]) ();
 typedef void (*na_mathfunc_t[NA_NTYPES]) ();
 typedef int  (*na_sortfunc_t[NA_NTYPES]) (const void *, const void *);
