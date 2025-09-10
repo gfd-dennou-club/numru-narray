@@ -287,7 +287,7 @@ static void
 	na_range_to_sequence(v,&len,&start,&dir);
 	if (len>0) {
 	  pos = na_index_pos(na,idx);
-	  IndGenFuncs[type](len, NA_PTR(na,pos),na_sizeof[type], start, (na_shape_t)dir);
+	  IndGenFuncs[type](len, NA_PTR(na,pos),na_sizeof[type], start, dir);
 	  idx[0] += len;
 	}
       }
@@ -323,8 +323,7 @@ static void
 	    pos = na_index_pos(na,idx);
 	    ++idx[thisrank];
 	    step = na_index_pos(na,idx)-pos;
-	    IndGenFuncs[type]( len, NA_PTR(na,pos), na_sizeof[type]*step,
-			       start, (na_shape_t)dir );
+	    IndGenFuncs[type]( len, NA_PTR(na,pos), na_sizeof[type]*step, start, dir );
 	    idx[thisrank] += len-1;
 	  }
 	}
@@ -516,7 +515,7 @@ VALUE
 
 /* convert NArray to Array */
 static VALUE
- na_to_array0(struct NARRAY* na, na_shape_t *idx, int thisrank, void (*func)())
+ na_to_array0(struct NARRAY* na, na_shape_t *idx, int thisrank, void (*func)(size_t, void*, size_t, void*, size_t))
 {
   na_shape_t i;
   int elmsz;
@@ -565,7 +564,7 @@ VALUE
 
 
 static VALUE
- na_inspect_col( na_shape_t n, char *p2, int p2step, void (*tostr)(),
+ na_inspect_col( na_shape_t n, char *p2, int p2step, void (*tostr)(void*, char*),
 		 VALUE sep, int rank )
 {
   VALUE str=Qnil, tmp;
@@ -654,6 +653,6 @@ VALUE
 }
 
 
-void Init_na_array() {
+void Init_na_array(void) {
     rb_define_method(cNArray, "to_a", na_to_array,0); //
 }

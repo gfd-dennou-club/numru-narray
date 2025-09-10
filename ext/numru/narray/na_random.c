@@ -94,7 +94,7 @@ static void
 }
 
 static void
- next_state()
+ next_state(void)
 {
     u_int32_t *p=state;
     int j;
@@ -131,8 +131,7 @@ static void
 static int first = 1;
 
 static int
-rand_init(seed)
-    u_int32_t seed;
+rand_init(u_int32_t seed)
 {
     static u_int32_t saved_seed;
     u_int32_t old;
@@ -146,7 +145,7 @@ rand_init(seed)
 }
 
 static u_int32_t
- random_seed()
+ random_seed(void)
 {
     static int n = 0;
     struct timeval tv;

@@ -38,14 +38,14 @@ const int na_cast_byte[NA_NTYPES] =
  { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
 
-static void TpErr(void) {
+static void TpErr(na_shape_t, ...) {
     rb_raise(rb_eTypeError,"illegal operation with this type");
 }
-static int TpErrI(void) {
+static int TpErrI(void*, void*) {
     rb_raise(rb_eTypeError,"illegal operation with this type");
     return 0;
 }
-static void na_zerodiv() {
+static void na_zerodiv(void) {
     rb_raise(rb_eZeroDivError, "divided by 0");
 }
 
@@ -80,9 +80,9 @@ data = [
   [/[XC]/,/[XC]/,        "p1.r = p2.r; p1.i = p2.i;"] ]
 
 $func_body =
-  "static void #name#CC(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#CC(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     OPERATION
@@ -97,9 +97,9 @@ mksetfuncs('Set','','',data)
 #  Unary Funcs
 #
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     OPERATION
@@ -257,9 +257,9 @@ mksortfuncs('SortIdx', $data_types, $data_types, [nil] +
 )
 
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   if (i1 != 0) {
     #pragma omp parallel for
     for (i=0; i<n; i++) {
@@ -304,9 +304,9 @@ mkfuncs('Max', $data_types, $data_types, [nil] +
  ["if (FIX2INT(rb_funcall(*p1,na_id_compare,1,*p2))<0) *p1=*p2;"]
 )
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   if (i1 != 0) {
     #pragma omp parallel for
     for (i=0; i<n; i++) {
@@ -331,9 +331,9 @@ mkfuncs('MulU', $data_types, $data_types,
 )
 
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   if (i1 != 0) {
     #pragma omp parallel for
     for (i=0; i<n; i++) {
@@ -372,9 +372,9 @@ mkfuncs('ModU', $data_types, $data_types,
 
 # indgen
 $func_body = 
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, int p2, na_shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, na_shape_t p2, int i2)
 {
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     OPERATION
@@ -392,7 +392,7 @@ mkfuncs('IndGen',$data_types,[$data_types[3]]*9,
 
 
 $func_body = 
-"static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+"static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
   OPERATION
 }
@@ -400,41 +400,41 @@ $func_body =
 mkfuncs('ToStr',['']+[$data_types[9]]*9,$data_types,
  [nil] +
  ["char buf[22];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%i\",(int)*p2);
     *p1 = rb_str_new2(buf);
   }"]*4 +
  ["char buf[24];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%.5g\",(double)*p2);
     *p1 = rb_str_new2(buf);
   }"] +
  ["char buf[24];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%.8g\",(double)*p2);
     *p1 = rb_str_new2(buf);
   }"] +
  ["char buf[50];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%.5g%+.5gi\",(double)p2.r,(double)p2.i);
     *p1 = rb_str_new2(buf);
   }"] +
  ["char buf[50];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%.8g%+.8gi\",(double)p2.r,(double)p2.i);
     *p1 = rb_str_new2(buf);
   }"] +
- ["int i;
+ ["na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     *p1 = rb_obj_as_string(*p2);
@@ -510,7 +510,7 @@ mkfuncs('Insp',['']+[$data_types[9]]*9,$data_types,
 =begin
 # Optimize experiment
 $func_body = 
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
 {
   na_shape_t i;
   if (i1==sizeof(type1) && i2==sizeof(type1) && i3==sizeof(type1)) {
@@ -532,9 +532,9 @@ mkfuncs('MulB', $data_types, $data_types,
 =end
 
 $func_body = 
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
 {
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     OPERATION
@@ -590,9 +590,9 @@ mkfuncs('ModB', $data_types, $data_types,
 
 
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
 {
-  int i;
+  na_shape_t i;
   if (i1 != 0) {
     #pragma omp parallel for
     for (i=0; i<n; i++) {
@@ -712,9 +712,9 @@ mkfuncs('atan2', $data_types, $data_types,
 #   Mask
 #
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
 {
-  int i, j=0;
+  na_shape_t i, j=0;
   for (i=0; i<n; i++) {
     OPERATION
   }

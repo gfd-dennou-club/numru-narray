@@ -1068,7 +1068,8 @@ VALUE na_fill(VALUE self, volatile VALUE val)
 VALUE
  na_indgen(int argc, VALUE *argv, VALUE self)
 {
-  na_shape_t start=0, step=1;
+  na_shape_t start=0;
+  int step=1;
   struct NARRAY *ary;
 
   if (argc>0) {
@@ -1233,7 +1234,7 @@ static VALUE
 
 /* initialization of NArray Class */
 void
- Init_narray()
+ Init_narray(void)
 {
 
     VALUE mNumRu;
