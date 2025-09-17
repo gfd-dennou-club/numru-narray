@@ -1,13 +1,13 @@
 $type_codes = %w(n B I L G F D X C O)
-$data_types = 
+$data_types =
  %w(none u_int8_t int16_t int32_t int64_t float double scomplex dcomplex VALUE)
 $real_types =
  %w(none u_int8_t int16_t int32_t int64_t float double float double VALUE)
-$int_types  = 
+$int_types  =
  %w(none u_int8_t int16_t int32_t int64_t int32_t int32_t scomplex dcomplex VALUE)
 $comp_types =
  %w(none scomplex scomplex scomplex dcomplex scomplex dcomplex scomplex dcomplex VALUE)
-$swap_types  = 
+$swap_types  =
  %w(none u_int8_t na_size16_t na_size32_t na_size64_t na_size32_t na_size64_t na_size64_t na_size128_t VALUE)
 $upcast = [
   [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -108,7 +108,7 @@ end
 
 
 
-def mkfuncs(name,t1,t2,func,idx=["i"]*3)
+def mkfuncs(name,t1,t2,func,idx=["i"]*3,na_typ="na_func_t",err_func="TpErr")
 
   print "
 /* ------------------------- #{name} --------------------------- */\n"
@@ -150,11 +150,11 @@ def mkfuncs(name,t1,t2,func,idx=["i"]*3)
 
   # Function Array
 
-  print "\nna_func_t #{name}Funcs =\n{ "
+  print "\n#{na_typ} #{name}Funcs =\n{ "
   m = []
   for i in 0...c.size
     if func[i] == nil
-      m += ['TpErr']
+      m += [err_func]
     elsif func[i]=='copy'
       m += ['Set'+c[$data_types.index(t1[i])]+c[i]]
     else
@@ -197,7 +197,7 @@ def mksortfuncs(bsname,t1,t2,func)
   m = []
   for i in 0...c.size
     if func[i] == nil
-      m += ['(int (*)(const void *, const void *))TpErrI']
+      m += ['TpErrS']
     elsif func[i]=='copy'
       m += ['Set'+c[i]*2]
     elsif !( func[i] =~ /^\{/ )

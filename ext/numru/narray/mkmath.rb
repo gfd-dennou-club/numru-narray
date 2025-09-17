@@ -33,6 +33,16 @@ static void TpErr(void) {
     rb_raise(rb_eTypeError,"illegal operation with this type");
 }
 
+/* for Rcp */
+static void TpErrR(na_shape_t, char*, int, char*, int) {
+    rb_raise(rb_eTypeError,"illegal operation with this type");
+}
+
+/* for Pow */
+static void TpErrP(na_shape_t, char*, int, char*, int, char*, int) {
+    rb_raise(rb_eTypeError,"illegal operation with this type");
+}
+
 #if 0
 void sincos(double x, double *s, double *c)
 {
@@ -200,7 +210,7 @@ static int powInt(int x, int p)
   case 0: return 1;
   }
   if (p<0)  return 0;
-  /* if(p>3) */	
+  /* if(p>3) */
   while (p) {
     if ( (p%2) == 1 ) r *= x;
     x *= x;
@@ -221,7 +231,7 @@ static float powFi(float x, int p)
   case 0: return 1;
   }
   if (p<0)  return 1/powFi(x,-p);
-  /* if(p>3) */	
+  /* if(p>3) */
   while (p) {
     if ( (p%2) == 1 ) r *= x;
     x *= x;
@@ -242,7 +252,7 @@ static double powDi(double x, int p)
   case 0: return 1;
   }
   if (p<0)  return 1/powDi(x,-p);
-  /* if(p>3) */	
+  /* if(p>3) */
   while (p) {
     if ( (p%2) == 1 ) r *= x;
     x *= x;
@@ -403,7 +413,6 @@ data = [
 }"]*2 +
 [nil] ],
 
-
 ['log2',
 [nil]*5 +
 ["{ *p1 = log(*p2)*M_LOG2E; }"]*2 +
@@ -413,7 +422,6 @@ data = [
   p1->i *= (typer)M_LOG2E;
 }"]*2 +
 [nil] ],
-
 
 ['asin',
 [nil]*5 +
@@ -568,8 +576,8 @@ end
 #
 #  Recip
 #
-$func_body = 
-  "static void #name#C(int n, char *p1_0, int i1, char *p2_0, int i2)
+$func_body =
+  "static void #name#C(na_shape_t n, char *p1_0, int i1, char *p2_0, int i2)
 {
   type1* p1 = (type1*) p1_0;
   typec* p2 = (typec*) p2_0;
@@ -583,9 +591,12 @@ $func_body =
 "
 mkfuncs('Rcp', $data_types, $data_types,
  [nil] +
- ["p1[i] = 1/(p2[i]);"]*6 + 
+ ["p1[i] = 1/(p2[i]);"]*6 +
  ["p1[i] = recip#C(p2[i]);"]*2 +
- ["p1[i] = rb_funcall(INT2FIX(1),na_id_div,1,p2[i]);"]
+ ["p1[i] = rb_funcall(INT2FIX(1),na_id_div,1,p2[i]);"],
+ ["i"]*3,
+ "na_ufunc_t",
+ "TpErrR"
 )
 
 
@@ -631,7 +642,7 @@ def mkpowfuncs(name,funcs)
   end
 
   # function pointer array
-  print "\nna_setfunc_t "+name+"Funcs = {\n"
+  print "\nna_setbifunc_t "+name+"Funcs = {\n"
   m = []
   for i in 0...n
     l = []
@@ -645,7 +656,7 @@ def mkpowfuncs(name,funcs)
 	end
       end
       if f
-	l += ['TpErr']
+	l += ['TpErrP']
       end
     end
     m += ['  { '+l.join(', ')+' }']
@@ -654,8 +665,8 @@ def mkpowfuncs(name,funcs)
 
 end
 
-$func_body = 
-"static void #name#CC(int n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
+$func_body =
+"static void #name#CC(na_shape_t n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
 {
   for (; n; --n) {
     OPERATION
@@ -742,7 +753,7 @@ static VALUE
   na_exec_math(a1, a2, funcs[a2->type]);
 
   if (CLASS_OF(self) == cNArrayScalar)
-    SetFuncs[NA_ROBJ][a1->type](1,&ans,0,a1->ptr,0);    
+    SetFuncs[NA_ROBJ][a1->type](1,(char*)&ans,0,a1->ptr,0);
 
   return ans;
 }

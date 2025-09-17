@@ -143,7 +143,7 @@ static void
     if (!EXCL(obj)) {
       ++len;
     }
-  } 
+  }
   *n = len;
 }
 
@@ -295,7 +295,7 @@ static void
 	/* NIL if empty */
 	if (v != Qnil) {
 	  pos = na_index_pos(na,idx);
-	  SetFuncs[type][NA_ROBJ]( 1, NA_PTR(na,pos), 0, &v, 0 );
+	  SetFuncs[type][NA_ROBJ]( 1, NA_PTR(na,pos), 0, (char*)&v, 0 );
 	  /* copy here */
 	}
 	idx[0] ++;
@@ -303,7 +303,7 @@ static void
     }
   }
   else /* thisrank > 0 */
-  { 
+  {
     for (i = idx[thisrank] = 0; i < RARRAY_LEN(ary); ++i) {
       v = RARRAY_PTR(ary)[i];
       if (TYPE(v) == T_ARRAY) {
@@ -329,7 +329,7 @@ static void
 	}
 	else {
 	  pos = na_index_pos(na,idx);
-	  SetFuncs[type][NA_ROBJ]( 1, NA_PTR(na,pos), 0, &(RARRAY_PTR(ary)[i]), 0 );
+	  SetFuncs[type][NA_ROBJ]( 1, NA_PTR(na,pos), 0, (char*)&(RARRAY_PTR(ary)[i]), 0 );
 	  ++idx[thisrank];
 	}
 	/* copy here */
@@ -515,7 +515,7 @@ VALUE
 
 /* convert NArray to Array */
 static VALUE
- na_to_array0(struct NARRAY* na, na_shape_t *idx, int thisrank, void (*func)(size_t, void*, size_t, void*, size_t))
+ na_to_array0(struct NARRAY* na, na_shape_t *idx, int thisrank, void (*func)(na_shape_t, char*, int, char*, int))
 {
   na_shape_t i;
   int elmsz;
@@ -529,7 +529,7 @@ static VALUE
     ptr   = NA_PTR( na, na_index_pos(na,idx) );
     elmsz = na_sizeof[na->type];
     for (i = na->shape[0]; i; --i) {
-      (*func)( 1, &val, 0, ptr, 0 );
+      (*func)( 1, (char*)&val, 0, ptr, 0 );
       ptr += elmsz;
       rb_ary_push( ary, val );
     }
@@ -564,7 +564,7 @@ VALUE
 
 
 static VALUE
- na_inspect_col( na_shape_t n, char *p2, int p2step, void (*tostr)(void*, char*),
+ na_inspect_col( na_shape_t n, char *p2, int p2step, void (*tostr)(VALUE*, char*),
 		 VALUE sep, int rank )
 {
   VALUE str=Qnil, tmp;

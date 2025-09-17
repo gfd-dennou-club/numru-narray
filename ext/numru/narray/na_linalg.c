@@ -290,7 +290,7 @@ static int
 /* :nodoc: */
 static VALUE
  na_lu_fact_bang(VALUE self)
-{ 
+{
   na_shape_t i, total, n;
   int sz, stat;
   struct NARRAY *ary;
@@ -590,10 +590,10 @@ void Init_na_linalg(VALUE mNumRu)
   for (i=1;i<NA_NTYPES;++i) {
     sz = na_funcset[i].elmsz = na_sizeof[i];
     sz = (sz>((int)sizeof(int))) ? sz : (int)sizeof(int);
-    SetFuncs[i][NA_LINT](1, a,0, &one, 0);
+    SetFuncs[i][NA_LINT](1, a,0, (char*)&one, 0);
     na_funcset[i].one = a;
     a += sz;
-    SetFuncs[i][NA_LINT](1, a,0, &zero,0);
+    SetFuncs[i][NA_LINT](1, a,0, (char*)&zero,0);
     na_funcset[i].zero = a;
     na_funcset[i].tiny = a;
     a += sz;

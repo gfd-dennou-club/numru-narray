@@ -771,7 +771,7 @@ static VALUE na_math_atan2(VALUE module, volatile VALUE y, volatile VALUE x)
   GetNArray(ans,aa);
 
   if (CLASS_OF(y) == cNArrayScalar && CLASS_OF(x) == cNArrayScalar)
-    SetFuncs[NA_ROBJ][aa->type](1,&ans,0,aa->ptr,0);
+    SetFuncs[NA_ROBJ][aa->type](1,(char*)&ans,0,aa->ptr,0);
 
   return ans;
 }
@@ -1239,7 +1239,7 @@ static VALUE
   int rankc, *rankv, cl_dim;
   struct NARRAY *a1, *a2;
   VALUE obj, klass;
-  int32_t one = 1;
+  na_shape_t one = 1;
 
   GetNArray(self,a1);
 
@@ -1257,7 +1257,7 @@ static VALUE
   obj = na_make_object(a1->type,a1->rank,shape,klass);
   GetNArray(obj,a2);
 
-  SetFuncs[a2->type][NA_SIZE](a2->total, a2->ptr, na_sizeof[a2->type], &one, 0);
+  SetFuncs[a2->type][NA_SIZE](a2->total, a2->ptr, na_sizeof[a2->type], (char*)&one, 0);
 
   na_exec_unary( a2, a1, MulUFuncs[a1->type] );
 
