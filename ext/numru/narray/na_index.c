@@ -62,7 +62,7 @@ static int
       ++len;
       step = 1;  /* or 0 ? depend on whether removing rank */
     }
-  } 
+  }
 
   if ( beg<0 || beg>=size || end<0 || end>=size )
     rb_raise(rb_eIndexError, "index out of range");
@@ -104,7 +104,7 @@ static na_shape_t
   else
   /* single element */
   if (a1->total==1) {
-    SetFuncs[NA_SIZE][a1->type](1, &idx, 0, a1->ptr, 0);
+    SetFuncs[NA_SIZE][a1->type](1, (char*)&idx, 0, a1->ptr, 0);
     if ( idx<0 ) idx += size;
     if ( idx<0 || idx>=size )
       rb_raise(rb_eIndexError, "index %zd out of range %zd", idx, size);
@@ -119,7 +119,7 @@ static na_shape_t
     s->step = 1;
     s->idx  = p = ALLOC_N(na_shape_t, a1->total);
     SetFuncs[NA_SIZE][a1->type]( s->n,
-				 s->idx, na_sizeof[NA_SIZE],
+				 (char*)s->idx, na_sizeof[NA_SIZE],
 				 a1->ptr, na_sizeof[a1->type] );
     for ( i=a1->total; i>0; --i ) {
       if ( *p<0 ) *p += size;
@@ -272,7 +272,7 @@ VALUE
 
   if (ary->rank < class_dim)
     return obj;
-  
+
   for (j=i=0; i<class_dim; ++i) {
     if (ary->shape[i]!=1 || shrink[i]==0) /* not trim */
       ++j;
@@ -291,7 +291,7 @@ VALUE
   ary->rank = j;
 
   if (j==0 && ary->total==1) {
-    SetFuncs[NA_ROBJ][ary->type](1, &obj, 0, ary->ptr, 0);
+    SetFuncs[NA_ROBJ][ary->type](1, (char*)&obj, 0, ary->ptr, 0);
   }
   return obj;
 }
@@ -413,7 +413,7 @@ static VALUE
       GetNArray(v,arynew);
       SetFuncs[ary->type][ary->type](1, arynew->ptr,0, NA_PTR(ary,sl->beg),0);
     } else {
-      SetFuncs[NA_ROBJ][ary->type](1, &v,0, NA_PTR(ary,sl->beg),0);
+      SetFuncs[NA_ROBJ][ary->type](1, (char*)&v,0, NA_PTR(ary,sl->beg),0);
     }
   }
   else
@@ -456,7 +456,7 @@ static VALUE
     pos = pos * ary->shape[i] + sl[i].beg;
   }
   if (rank==0) {
-    SetFuncs[NA_ROBJ][ary->type](1, &v, 0, NA_PTR(ary,pos), 0);
+    SetFuncs[NA_ROBJ][ary->type](1, (char*)&v, 0, NA_PTR(ary,pos), 0);
   } else {
     VALUE klass;
     int   class_dim;
@@ -589,7 +589,7 @@ VALUE
   if (a1->total != am->total)
     rb_raise(rb_eTypeError,"self.size(=%zd) != mask.size(=%zd)",
 	     a1->total, am->total);
-  if (a1->rank != am->rank) 
+  if (a1->rank != am->rank)
     rb_raise(rb_eTypeError,"self.rank(=%i) != mask.rank(=%i)",
 	     a1->rank, am->rank);
   for (i=0; i<a1->rank; ++i)
@@ -675,7 +675,7 @@ static void
 {
   int  i, j;
   na_shape_t idx_end;
-  
+
   /* count range index */
   for (j=i=0; i<dst->rank; ++i) {
 
@@ -834,7 +834,7 @@ static void
       /* Storing single element:
 	 a[1] = 1
       */
-      SetFuncs[dst->type][NA_ROBJ](1, NA_PTR(dst,sl->beg),0, &val,0);
+      SetFuncs[dst->type][NA_ROBJ](1, NA_PTR(dst,sl->beg),0, (char*)&val,0);
       return;
     }
     /* Beginning index:
@@ -873,33 +873,39 @@ static void
   size = na_index_analysis( nidx, idx, dst, sl );
 
   if ( size == 0 ) { xfree(sl); return; } /* Empty index */
-  if ( size == 1 ) {
-    if (NA_IsArray(val)) {
+  if (size == 1)
+  {
+    if (NA_IsArray(val))
+    {
       /* Beginning index:
-	   a[2,3,4] = other
+     a[2,3,4] = other
        */
-      val = na_cast_unless_narray(val,dst->type);
-      GetNArray(val,src);
+      val = na_cast_unless_narray(val, dst->type);
+      GetNArray(val, src);
       if (src->total > 1)
-	for( i=0; i<src->rank; ++i ) {
-	  sl[i].n = 0;
-	  sl[i].step = 1;
-	}
+        for (i = 0; i < src->rank; ++i)
+        {
+          sl[i].n = 0;
+          sl[i].step = 1;
+        }
     }
-    else {
+    else
+    {
       /* Single Element:
          a[2,3,4] = 5
       */
-      for ( pos=0, i=dst->rank; i-->0; )
-	pos = pos * dst->shape[i] + sl[i].beg;
-      SetFuncs[dst->type][NA_ROBJ](1, NA_PTR(dst,pos), 0, &val, 0 );
+      for (pos = 0, i = dst->rank; i-- > 0;)
+        pos = pos * dst->shape[i] + sl[i].beg;
+      SetFuncs[dst->type][NA_ROBJ](1, NA_PTR(dst, pos), 0, (char*)&val, 0);
       xfree(sl);
       return;
     }
   }
   else
-    val = na_cast_unless_narray(val,dst->type);
-    GetNArray(val,src);
+  {
+    val = na_cast_unless_narray(val, dst->type);
+    GetNArray(val, src);
+  }
 
   /* if ( size>1 ) */
     /* Range index:
@@ -908,7 +914,7 @@ static void
   na_aset_slice( dst, src, sl );
 
   na_free_slice_index(sl,nidx); /* free index memory */
-  xfree(sl); 
+  xfree(sl);
 }
 
 
@@ -952,7 +958,7 @@ void
   if (a1->total != am->total)
     rb_raise(rb_eTypeError,"self.size(=%zd) != mask.size(=%zd)",
 	     a1->total, am->total);
-  if (a1->rank != am->rank) 
+  if (a1->rank != am->rank)
     rb_raise(rb_eTypeError,"self.rank(=%i) != mask.rank(=%i)",
 	     a1->rank, am->rank);
   for (i=0; i<a1->rank; ++i)
@@ -966,7 +972,7 @@ void
   GetNArray( val, a2 );
   if (a2->total == 1) {
     step = 0;
-  } else if (a2->total == size) { 
+  } else if (a2->total == size) {
     step = na_sizeof[a2->type];
   } else {
     rb_raise(rb_eTypeError,"val.length != mask.count_true");
@@ -1010,7 +1016,7 @@ VALUE
 }
 
 
-void Init_na_index() {
+void Init_na_index(void) {
     /* slice */
     rb_define_method(cNArray, "[]", na_aref,-1);
     rb_define_method(cNArray, "[]=", na_aset,-1);

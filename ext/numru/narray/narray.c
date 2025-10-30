@@ -213,7 +213,7 @@ static VALUE
 
   /* Extract element */
   if (ary->rank==0 && ary->total==1) {
-    SetFuncs[NA_ROBJ][ary->type](1,&v,0,ary->ptr,0);
+    SetFuncs[NA_ROBJ][ary->type](1,(char*)&v,0,ary->ptr,0);
     na_free(ary);
     return v;
   }
@@ -275,7 +275,7 @@ VALUE
 
   v = na_make_object(type,1,&shape,cNArrayScalar);
   GetNArray(v,ary);
-  SetFuncs[ary->type][NA_ROBJ](1, ary->ptr,0, &obj,0);
+  SetFuncs[ary->type][NA_ROBJ](1, ary->ptr,0, (char*)&obj,0);
 
   return v;
 }
@@ -1068,7 +1068,8 @@ VALUE na_fill(VALUE self, volatile VALUE val)
 VALUE
  na_indgen(int argc, VALUE *argv, VALUE self)
 {
-  na_shape_t start=0, step=1;
+  na_shape_t start=0;
+  int step=1;
   struct NARRAY *ary;
 
   if (argc>0) {
@@ -1233,7 +1234,7 @@ static VALUE
 
 /* initialization of NArray Class */
 void
- Init_narray()
+ Init_narray(void)
 {
 
     VALUE mNumRu;

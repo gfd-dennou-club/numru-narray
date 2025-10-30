@@ -38,14 +38,31 @@ const int na_cast_byte[NA_NTYPES] =
  { 0, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
 
 
-static void TpErr(void) {
+static void TpErr(na_shape_t, char*, int, char*, int) {
     rb_raise(rb_eTypeError,"illegal operation with this type");
 }
-static int TpErrI(void) {
+
+static void TpErrB(na_shape_t, char*, int, char*, int, char*, int) {
+    rb_raise(rb_eTypeError,"illegal operation with this type");
+}
+
+/* For Indgen */
+static void TpErrG(na_shape_t, char*, na_shape_t, na_shape_t, int) {
+    rb_raise(rb_eTypeError,"illegal operation with this type");
+}
+
+/* For Insp */
+static void TpErrI(VALUE*, char*) {
+    rb_raise(rb_eTypeError,"illegal operation with this type");
+}
+
+/* For Sort */
+static int TpErrS(const void*, const void*) {
     rb_raise(rb_eTypeError,"illegal operation with this type");
     return 0;
 }
-static void na_zerodiv() {
+
+static void na_zerodiv(void) {
     rb_raise(rb_eZeroDivError, "divided by 0");
 }
 
@@ -80,9 +97,9 @@ data = [
   [/[XC]/,/[XC]/,        "p1.r = p2.r; p1.i = p2.i;"] ]
 
 $func_body =
-  "static void #name#CC(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#CC(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     OPERATION
@@ -97,9 +114,9 @@ mksetfuncs('Set','','',data)
 #  Unary Funcs
 #
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     OPERATION
@@ -110,14 +127,14 @@ $func_body =
 
 mkfuncs('Swp', $swap_types, $swap_types,
  [nil] +
- ["*p1 = *p2;"] + 
- ["na_size16_t x;  swap16(x,*p2);   *p1 = x;"] + 
- ["na_size32_t x;  swap32(x,*p2);   *p1 = x;"] + 
- ["na_size64_t x;  swap64(x,*p2);   *p1 = x;"] + 
- ["na_size32_t x;  swap32(x,*p2);   *p1 = x;"] + 
- ["na_size64_t x;  swap64(x,*p2);   *p1 = x;"] + 
- ["na_size64_t x;  swap64c(x,*p2);  *p1 = x;"] + 
- ["na_size128_t x; swap128c(x,*p2); *p1 = x;"] + 
+ ["*p1 = *p2;"] +
+ ["na_size16_t x;  swap16(x,*p2);   *p1 = x;"] +
+ ["na_size32_t x;  swap32(x,*p2);   *p1 = x;"] +
+ ["na_size64_t x;  swap64(x,*p2);   *p1 = x;"] +
+ ["na_size32_t x;  swap32(x,*p2);   *p1 = x;"] +
+ ["na_size64_t x;  swap64(x,*p2);   *p1 = x;"] +
+ ["na_size64_t x;  swap64c(x,*p2);  *p1 = x;"] +
+ ["na_size128_t x; swap128c(x,*p2); *p1 = x;"] +
  ["*p1 = *p2;"]
 )
 
@@ -148,7 +165,7 @@ EOM
 
 mkfuncs('Neg', $data_types, $data_types,
  [nil] +
- ["*p1 = -*p2;"]*6 + 
+ ["*p1 = -*p2;"]*6 +
  ["p1.r = -p2.r;
     p1.i = -p2.i;"]*2 +
  ["*p1 = rb_funcall(*p2,na_id_minus,0);"]
@@ -163,40 +180,40 @@ mkfuncs('ImgSet',$data_types,$real_types,
 
 
 mkfuncs('Floor',$int_types,$data_types,[nil] +
- ['copy']*4 + 
- ["*p1 = (typec)floor(*p2);"]*2 + 
+ ['copy']*4 +
+ ["*p1 = (typec)floor(*p2);"]*2 +
  [nil]*3
 )
 
 mkfuncs('Ceil',$int_types,$data_types,[nil] +
- ['copy']*4 + 
- ["*p1 = (typec)ceil(*p2);"]*2 + 
+ ['copy']*4 +
+ ["*p1 = (typec)ceil(*p2);"]*2 +
  [nil]*3
 )
 
 mkfuncs('Round',$int_types,$data_types,[nil] +
- ['copy']*4 + 
-# ["*p1 = floor(*p2+0.5);"]*2 + 
+ ['copy']*4 +
+# ["*p1 = floor(*p2+0.5);"]*2 +
  ["if (*p2 >= 0) *p1 = (typec)floor(*p2+0.5);
-     else *p1 = (typec)ceil(*p2-0.5);"]*2 + 
+     else *p1 = (typec)ceil(*p2-0.5);"]*2 +
  [nil]*3
 )
 
 mkfuncs('Abs',$real_types,$data_types,[nil] +
- ["*p1 = *p2;"] + 
- ["*p1 = (*p2<0) ? -*p2 : *p2;"]*5 + 
+ ["*p1 = *p2;"] +
+ ["*p1 = (*p2<0) ? -*p2 : *p2;"]*5 +
  ["*p1 = (typec)hypot(p2.r, p2.i);"]*2 +
  ["*p1 = rb_funcall(*p2,na_id_abs,0);"]
 )
 
 
 mkfuncs('Real',$real_types,$data_types,[nil] +
- ['copy']*8 + 
+ ['copy']*8 +
  [nil]
 )
 
 mkfuncs('Imag',$real_types,$data_types,[nil] +
- ["*p1 = 0;"]*6 + 
+ ["*p1 = 0;"]*6 +
  ["*p1 = p2.i;"]*2 +
  [nil]
 )
@@ -209,13 +226,13 @@ mkfuncs('Angl',$real_types,$data_types,[nil] +
 
 mkfuncs('ImagMul',$comp_types,$data_types,[nil] +
  [nil]*4 +
- ["p1.r = 0; p1.i = *p2;"]*2 + 
+ ["p1.r = 0; p1.i = *p2;"]*2 +
  ["p1.r = -p2.i; p1.i = p2.r;"]*2 +
  [nil]
 )
 
 mkfuncs('Conj',$data_types,$data_types,[nil] +
- ['copy']*6 + 
+ ['copy']*6 +
  ["p1.r = p2.r; p1.i = -p2.i;"]*2 +
  [nil]
 )
@@ -257,9 +274,9 @@ mksortfuncs('SortIdx', $data_types, $data_types, [nil] +
 )
 
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   if (i1 != 0) {
     #pragma omp parallel for
     for (i=0; i<n; i++) {
@@ -304,9 +321,9 @@ mkfuncs('Max', $data_types, $data_types, [nil] +
  ["if (FIX2INT(rb_funcall(*p1,na_id_compare,1,*p2))<0) *p1=*p2;"]
 )
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   if (i1 != 0) {
     #pragma omp parallel for
     for (i=0; i<n; i++) {
@@ -331,9 +348,9 @@ mkfuncs('MulU', $data_types, $data_types,
 )
 
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
-  int i;
+  na_shape_t i;
   if (i1 != 0) {
     #pragma omp parallel for
     for (i=0; i<n; i++) {
@@ -371,10 +388,10 @@ mkfuncs('ModU', $data_types, $data_types,
 
 
 # indgen
-$func_body = 
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, int p2, na_shape_t i2)
+$func_body =
+  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, na_shape_t p2, int i2)
 {
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     OPERATION
@@ -386,13 +403,16 @@ mkfuncs('IndGen',$data_types,[$data_types[3]]*9,
  ["*p1 = (typef)p2;"]*6 +
  ["p1.r = (typef)p2;
    p1.i = 0;"]*2 +
- ["*p1 = INT2FIX(p2);"]
+ ["*p1 = INT2FIX(p2);"],
+ ["i"]*3,
+ "na_indgenfunc_t",
+ "TpErrG"
 )
 
 
 
-$func_body = 
-"static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2)
+$func_body =
+"static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2)
 {
   OPERATION
 }
@@ -400,41 +420,41 @@ $func_body =
 mkfuncs('ToStr',['']+[$data_types[9]]*9,$data_types,
  [nil] +
  ["char buf[22];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%i\",(int)*p2);
     *p1 = rb_str_new2(buf);
   }"]*4 +
  ["char buf[24];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%.5g\",(double)*p2);
     *p1 = rb_str_new2(buf);
   }"] +
  ["char buf[24];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%.8g\",(double)*p2);
     *p1 = rb_str_new2(buf);
   }"] +
  ["char buf[50];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%.5g%+.5gi\",(double)p2.r,(double)p2.i);
     *p1 = rb_str_new2(buf);
   }"] +
  ["char buf[50];
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     sprintf(buf,\"%.8g%+.8gi\",(double)p2.r,(double)p2.i);
     *p1 = rb_str_new2(buf);
   }"] +
- ["int i;
+ ["na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     *p1 = rb_obj_as_string(*p2);
@@ -463,8 +483,8 @@ static void na_str_append_fp(char *buf)
 }
 EOM
 
-$func_body = 
-"static void #name#C(char *p1, char *p2)
+$func_body =
+"static void #name#C(VALUE *p1, char *p2)
 {
   OPERATION
 }
@@ -498,7 +518,10 @@ mkfuncs('Insp',['']+[$data_types[9]]*9,$data_types,
   na_str_append_fp(b);
   strcat(buf,\"i\");
   *p1 = rb_str_new2(buf);"] +
- ["*p1 = rb_inspect(*p2);"]
+ ["*p1 = rb_inspect(*p2);"],
+ ["i"]*3,
+ "na_inspfunc_t",
+ "TpErrI"
 )
 
 
@@ -509,8 +532,8 @@ mkfuncs('Insp',['']+[$data_types[9]]*9,$data_types,
 
 =begin
 # Optimize experiment
-$func_body = 
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
+$func_body =
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
 {
   na_shape_t i;
   if (i1==sizeof(type1) && i2==sizeof(type1) && i3==sizeof(type1)) {
@@ -531,10 +554,10 @@ mkfuncs('MulB', $data_types, $data_types,
 )
 =end
 
-$func_body = 
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
+$func_body =
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
 {
-  int i;
+  na_shape_t i;
   #pragma omp parallel for
   for (i=0; i<n; i++) {
     OPERATION
@@ -544,27 +567,36 @@ $func_body =
 
 mkfuncs('AddB', $data_types, $data_types,
  [nil] +
- ["*p1 = *p2 + *p3;"]*6 + 
+ ["*p1 = *p2 + *p3;"]*6 +
  ["p1.r = p2.r + p3.r;
     p1.i = p2.i + p3.i;"]*2 +
- ["*p1 = rb_funcall(*p2,'+',1,*p3);"]
+ ["*p1 = rb_funcall(*p2,'+',1,*p3);"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('SbtB', $data_types, $data_types,
  [nil] +
- ["*p1 = *p2 - *p3;"]*6 + 
+ ["*p1 = *p2 - *p3;"]*6 +
  ["p1.r = p2.r - p3.r;
     p1.i = p2.i - p3.i;"]*2 +
- ["*p1 = rb_funcall(*p2,'-',1,*p3);"]
+ ["*p1 = rb_funcall(*p2,'-',1,*p3);"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('MulB', $data_types, $data_types,
  [nil] +
- ["*p1 = *p2 * *p3;"]*6 + 
+ ["*p1 = *p2 * *p3;"]*6 +
  ["type1 x = *p2;
     p1.r = x.r*p3.r - x.i*p3.i;
     p1.i = x.r*p3.i + x.i*p3.r;"]*2 +
- ["*p1 = rb_funcall(*p2,'*',1,*p3);"]
+ ["*p1 = rb_funcall(*p2,'*',1,*p3);"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('DivB', $data_types, $data_types,
@@ -576,23 +608,29 @@ mkfuncs('DivB', $data_types, $data_types,
     typef a = p3.r*p3.r + p3.i*p3.i;
     p1.r = (x.r*p3.r + x.i*p3.i)/a;
     p1.i = (x.i*p3.r - x.r*p3.i)/a;"]*2 +
- ["*p1 = rb_funcall(*p2,'/',1,*p3);"]
+ ["*p1 = rb_funcall(*p2,'/',1,*p3);"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('ModB', $data_types, $data_types,
  [nil] +
  ["if (*p3==0) {na_zerodiv();};
     *p1 = *p2 % *p3;"]*4 +
- ["*p1 = fmod(*p2, *p3);"]*2 + 
+ ["*p1 = fmod(*p2, *p3);"]*2 +
  [nil]*2 +
- ["*p1 = rb_funcall(*p2,'%',1,*p3);"]
+ ["*p1 = rb_funcall(*p2,'%',1,*p3);"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
 {
-  int i;
+  na_shape_t i;
   if (i1 != 0) {
     #pragma omp parallel for
     for (i=0; i<n; i++) {
@@ -609,22 +647,28 @@ $func_body =
 
 mkfuncs('MulAdd', $data_types, $data_types,
  [nil] +
- ["*p1 += *p2 * *p3;"]*6 + 
+ ["*p1 += *p2 * *p3;"]*6 +
  ["type1 x = *p2;
     p1.r += x.r*p3.r - x.i*p3.i;
     p1.i += x.r*p3.i + x.i*p3.r;"]*2 +
  ["*p1 = rb_funcall(*p1,'+',1,
-    rb_funcall(*p2,'*',1,*p3));"]
+    rb_funcall(*p2,'*',1,*p3));"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('MulSbt', $data_types, $data_types,
  [nil] +
- ["*p1 -= *p2 * *p3;"]*6 + 
+ ["*p1 -= *p2 * *p3;"]*6 +
  ["type1 x = *p2;
     p1.r -= x.r*p3.r - x.i*p3.i;
     p1.i -= x.r*p3.i + x.i*p3.r;"]*2 +
  ["*p1 = rb_funcall(*p1,'-',1,
-    rb_funcall(*p2,'*',1,*p3));"]
+    rb_funcall(*p2,'*',1,*p3));"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 
@@ -634,23 +678,32 @@ mkfuncs('MulSbt', $data_types, $data_types,
 
 mkfuncs('BAn', $data_types, $data_types,
  [nil] +
- ["*p1 = *p2 & *p3;"]*4 + 
+ ["*p1 = *p2 & *p3;"]*4 +
  [nil]*4 +
- ["*p1 = rb_funcall(*p2,'&',1,*p3);"]
+ ["*p1 = rb_funcall(*p2,'&',1,*p3);"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('BOr', $data_types, $data_types,
  [nil] +
- ["*p1 = *p2 | *p3;"]*4 + 
+ ["*p1 = *p2 | *p3;"]*4 +
  [nil]*4 +
- ["*p1 = rb_funcall(*p2,'|',1,*p3);"]
+ ["*p1 = rb_funcall(*p2,'|',1,*p3);"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('BXo', $data_types, $data_types,
  [nil] +
- ["*p1 = *p2 ^ *p3;"]*4 + 
+ ["*p1 = *p2 ^ *p3;"]*4 +
  [nil]*4 +
- ["*p1 = rb_funcall(*p2,'^',1,*p3);"]
+ ["*p1 = rb_funcall(*p2,'^',1,*p3);"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 
@@ -662,7 +715,10 @@ mkfuncs('Eql', [$data_types[1]]*10, $data_types,
  [nil] +
  ["*p1 = (*p2==*p3) ? 1:0;"]*6 +
  ["*p1 = (p2.r==p3.r) && (p2.i==p3.i) ? 1:0;"]*2 +
- ["*p1 = RTEST(rb_equal(*p2, *p3)) ? 1:0;"]
+ ["*p1 = RTEST(rb_equal(*p2, *p3)) ? 1:0;"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('Cmp', [$data_types[1]]*10, $data_types,
@@ -672,28 +728,40 @@ mkfuncs('Cmp', [$data_types[1]]*10, $data_types,
     else *p1=0;"]*6 +
  [nil]*2 +
  ["int v = NUM2INT(rb_funcall(*p2,na_id_compare,1,*p3));
-    if (v>0) *p1=1; else if (v<0) *p1=2; else *p1=0;"]
+    if (v>0) *p1=1; else if (v<0) *p1=2; else *p1=0;"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('And', [$data_types[1]]*10, $data_types,
  [nil] +
  ["*p1 = (*p2!=0 && *p3!=0) ? 1:0;"]*6 +
  ["*p1 = ((p2.r!=0||p2.i!=0) && (p3.r!=0||p3.i!=0)) ? 1:0;"]*2 +
- ["*p1 = (RTEST(*p2) && RTEST(*p3)) ? 1:0;"]
+ ["*p1 = (RTEST(*p2) && RTEST(*p3)) ? 1:0;"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('Or_', [$data_types[1]]*10, $data_types,
  [nil] +
  ["*p1 = (*p2!=0 || *p3!=0) ? 1:0;"]*6 +
  ["*p1 = ((p2.r!=0||p2.i!=0) || (p3.r!=0||p3.i!=0)) ? 1:0;"]*2 +
- ["*p1 = (RTEST(*p2) || RTEST(*p3)) ? 1:0;"]
+ ["*p1 = (RTEST(*p2) || RTEST(*p3)) ? 1:0;"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('Xor', [$data_types[1]]*10, $data_types,
  [nil] +
  ["*p1 = ((*p2!=0) == (*p3!=0)) ? 0:1;"]*6 +
  ["*p1 = ((p2.r!=0||p2.i!=0) == (p3.r!=0||p3.i!=0)) ? 0:1;"]*2 +
- ["*p1 = (RTEST(*p2) == RTEST(*p3)) ? 0:1;"]
+ ["*p1 = (RTEST(*p2) == RTEST(*p3)) ? 0:1;"],
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 
@@ -704,7 +772,10 @@ mkfuncs('Xor', [$data_types[1]]*10, $data_types,
 mkfuncs('atan2', $data_types, $data_types,
  [nil]*5 +
  ["*p1 = atan2(*p2, *p3);"]*2 +
- [nil]*3
+ [nil]*3,
+ ["i"]*3,
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 
@@ -712,9 +783,9 @@ mkfuncs('atan2', $data_types, $data_types,
 #   Mask
 #
 $func_body =
-  "static void #name#C(na_shape_t n, char *p1, na_shape_t i1, char *p2, na_shape_t i2, char *p3, na_shape_t i3)
+  "static void #name#C(na_shape_t n, char *p1, int i1, char *p2, int i2, char *p3, int i3)
 {
-  int i, j=0;
+  na_shape_t i, j=0;
   for (i=0; i<n; i++) {
     OPERATION
   }
@@ -723,11 +794,15 @@ $func_body =
 mkfuncs('RefMask',$data_types,$data_types,
  [nil] +
  ["if (*(u_int8_t*)p3) { *p1=*p2; j+=1; }"]*9,
- ["j","i","i"]
+ ["j","i","i"],
+ "na_bifunc_t",
+ "TpErrB"
 )
 
 mkfuncs('SetMask',$data_types,$data_types,
  [nil] +
  ["if (*(u_int8_t*)p3) { *p1=*p2; j+=1; };"]*9,
- ["i","j","i"]
+ ["i","j","i"],
+  "na_bifunc_t",
+ "TpErrB"
 )

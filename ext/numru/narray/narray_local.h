@@ -14,7 +14,7 @@ typedef int32_t na_index_t;
 struct slice {
   char *p;   	/* pointer to data		--- used in loop */
   na_shape_t n;    	/* n of indices of this rank */
-  na_shape_t pstep; /* = step * stride * elmsz	--- set in na_init_slice */ 
+  na_shape_t pstep; /* = step * stride * elmsz	--- set in na_init_slice */
   na_shape_t pbeg;  /* = beg * stride * elmsz	--- set in na_init_slice */
   na_shape_t stride; /* = shape[0]*shape[1]*...*shape[r-1]
 						--- set in na_init_slice */
@@ -23,12 +23,15 @@ struct slice {
   na_shape_t *idx;  /* NULL if normal step */
 };
 
-typedef void (*na_setfunc_t[NA_NTYPES][NA_NTYPES]) ();
+typedef void (*na_setfunc_t[NA_NTYPES][NA_NTYPES]) (na_shape_t, char*, int, char*, int);
+typedef void (*na_setbifunc_t[NA_NTYPES][NA_NTYPES]) (na_shape_t, char*, int, char*, int, char*, int);
 typedef void (*na_func_t[NA_NTYPES]) ();
-typedef void (*na_ufunc_t[NA_NTYPES]) ();
-typedef void (*na_bifunc_t[NA_NTYPES]) ();
+typedef void (*na_ufunc_t[NA_NTYPES]) (na_shape_t, char*, int, char*, int);
+typedef void (*na_bifunc_t[NA_NTYPES]) (na_shape_t, char*, int, char*, int, char*, int);
 typedef void (*na_mathfunc_t[NA_NTYPES]) ();
 typedef int  (*na_sortfunc_t[NA_NTYPES]) (const void *, const void *);
+typedef void (*na_inspfunc_t[NA_NTYPES]) (VALUE*, char*);
+typedef void (*na_indgenfunc_t[NA_NTYPES]) (na_shape_t, char*, na_shape_t, na_shape_t, int);
 
 /* function arrays */
 extern na_setfunc_t SetFuncs;
@@ -47,8 +50,8 @@ extern na_ufunc_t  FloorFuncs;
 extern na_ufunc_t  CeilFuncs;
 extern na_ufunc_t  RoundFuncs;
 extern na_ufunc_t  ToStrFuncs;
-extern na_ufunc_t  InspFuncs;
-extern na_ufunc_t  IndGenFuncs;
+extern na_inspfunc_t InspFuncs;
+extern na_indgenfunc_t IndGenFuncs;
 extern na_ufunc_t  AddUFuncs;
 extern na_ufunc_t  SbtUFuncs;
 extern na_ufunc_t  MulUFuncs;
@@ -65,14 +68,14 @@ extern na_bifunc_t BAnFuncs;
 extern na_bifunc_t BOrFuncs;
 extern na_bifunc_t BXoFuncs;
 extern na_ufunc_t  BRvFuncs;
-extern na_bifunc_t ImgSetFuncs;
-extern na_setfunc_t PowFuncs;
+extern na_ufunc_t ImgSetFuncs;
+extern na_setbifunc_t PowFuncs;
 extern na_bifunc_t atan2Funcs;
 extern na_bifunc_t CmpFuncs;
 extern na_bifunc_t EqlFuncs;
-extern na_ufunc_t  AndFuncs;
-extern na_ufunc_t  Or_Funcs;
-extern na_ufunc_t  XorFuncs;
+extern na_bifunc_t AndFuncs;
+extern na_bifunc_t Or_Funcs;
+extern na_bifunc_t XorFuncs;
 extern na_ufunc_t  NotFuncs;
 extern na_ufunc_t  MinFuncs;
 extern na_ufunc_t  MaxFuncs;
