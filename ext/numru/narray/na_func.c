@@ -72,7 +72,7 @@ void na_init_slice( struct slice *s, int rank, na_shape_t *shape, int elmsz )
 
 static void
  na_do_loop_unary( int nd, char *p1, char *p2,
-		   struct slice *s1, struct slice *s2, void (*func)() )
+		   struct slice *s1, struct slice *s2, void (*func)(na_shape_t, char*, int, char*, int) )
 {
   int *si;
   int  i;
@@ -107,7 +107,7 @@ static void
 static void
  na_do_loop_binary( int nd, char *p1, char *p2, char *p3,
 		    struct slice *s1, struct slice *s2, struct slice *s3,
-		    void (*func)() )
+		    void (*func)(na_shape_t, char*, int, char*, int, char*, int) )
 {
   int i;
   na_shape_t ps1 = s1[0].pstep;
@@ -146,7 +146,7 @@ static void
 
 
 void na_loop_index_ref( struct NARRAY *a1, struct NARRAY *a2,
-			struct slice *s1, struct slice *s2, void (*func)() )
+			struct slice *s1, struct slice *s2, void (*func)(na_shape_t, char*, int, char*, int) )
 {
   char *p1, *p2;
   int nr, i;
@@ -213,7 +213,7 @@ void na_loop_index_ref( struct NARRAY *a1, struct NARRAY *a2,
 
 
 void na_loop_general( struct NARRAY *a1, struct NARRAY *a2,
-		      struct slice *s1, struct slice *s2, void (*func)() )
+		      struct slice *s1, struct slice *s2, void (*func)(na_shape_t, char*, int, char*, int) )
 {
   char *p1, *p2;
   int nr, i, ii;
@@ -441,7 +441,7 @@ int
 
 
 static void
- na_exec_unary(struct NARRAY *a1, struct NARRAY *a2, void (*func)())
+ na_exec_unary(struct NARRAY *a1, struct NARRAY *a2, void (*func)(na_shape_t, char*, int, char*, int))
 {
   int  ndim;
   na_shape_t *shp1, *shp2;
@@ -474,7 +474,7 @@ static void
 /* a1 and/or a2 and/or a3 have extensible index */
 static void
  na_exec_binary( struct NARRAY *a1, struct NARRAY *a2,
-		 struct NARRAY *a3, void (*func)() )
+		 struct NARRAY *a3, void (*func)(na_shape_t, char*, int, char*, int, char*, int) )
 {
   int   ndim;
   na_shape_t *itr, *shp1, *shp2, *shp3;

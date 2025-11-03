@@ -62,6 +62,9 @@ The original copyright notice follows.
 #include "narray.h"
 #include "narray_local.h"
 
+/* Random function pointer type - matches actual function signatures */
+typedef void (*na_randfunc_t)(na_shape_t, char*, int, double);
+
 /* Period parameters */
 #define N 624
 #define M 397
@@ -234,11 +237,12 @@ static u_int64_t size_check(double rmax, double limit)
   return max;
 }
 
-static void TpErr(void) {
+static void TpErr(na_shape_t n, char *p1, int i1, double rmax) {
+    (void)n; (void)p1; (void)i1; (void)rmax;  /* unused parameters */
     rb_raise(rb_eTypeError,"illegal operation with this type");
 }
 
-static void RndB(int n, char *p1, int i1, double rmax)
+static void RndB(na_shape_t n, char *p1, int i1, double rmax)
 {
   u_int32_t y;
   u_int64_t max;
@@ -267,7 +271,7 @@ static void RndB(int n, char *p1, int i1, double rmax)
   }
 }
 
-static void RndI(int n, char *p1, int i1, double rmax)
+static void RndI(na_shape_t n, char *p1, int i1, double rmax)
 {
   u_int32_t y;
   u_int64_t max;
@@ -294,7 +298,7 @@ static void RndI(int n, char *p1, int i1, double rmax)
   }
 }
 
-static void RndL(int n, char *p1, int i1, double rmax)
+static void RndL(na_shape_t n, char *p1, int i1, double rmax)
 {
   u_int32_t y;
   u_int64_t max;
@@ -321,7 +325,7 @@ static void RndL(int n, char *p1, int i1, double rmax)
   }
 }
 
-static void RndG(int n, char *p1, int i1, double rmax)
+static void RndG(na_shape_t n, char *p1, int i1, double rmax)
 {
   u_int64_t y;
   u_int64_t max;
@@ -348,7 +352,7 @@ static void RndG(int n, char *p1, int i1, double rmax)
   }
 }
 
-static void RndF(int n, char *p1, int i1, double rmax)
+static void RndF(na_shape_t n, char *p1, int i1, double rmax)
 {
   u_int32_t y;
 
@@ -359,7 +363,7 @@ static void RndF(int n, char *p1, int i1, double rmax)
   }
 }
 
-static void RndD(int n, char *p1, int i1, double rmax)
+static void RndD(na_shape_t n, char *p1, int i1, double rmax)
 {
   u_int32_t x,y;
 
@@ -371,7 +375,7 @@ static void RndD(int n, char *p1, int i1, double rmax)
   }
 }
 
-static void RndX(int n, char *p1, int i1, double rmax)
+static void RndX(na_shape_t n, char *p1, int i1, double rmax)
 {
   u_int32_t y;
 
@@ -383,7 +387,7 @@ static void RndX(int n, char *p1, int i1, double rmax)
   }
 }
 
-static void RndC(int n, char *p1, int i1, double rmax)
+static void RndC(na_shape_t n, char *p1, int i1, double rmax)
 {
   u_int32_t x,y;
 
@@ -396,7 +400,7 @@ static void RndC(int n, char *p1, int i1, double rmax)
   }
 }
 
-na_func_t RndFuncs =
+na_randfunc_t RndFuncs[NA_NTYPES] =
   { TpErr, RndB, RndI, RndL, RndG, RndF, RndD, RndX, RndC, TpErr };
 
 
@@ -422,7 +426,7 @@ static VALUE
 
   GetNArray(self,ary);
 
-  (*RndFuncs[ary->type])( ary->total, ary->ptr, na_sizeof[ary->type], rmax );
+  RndFuncs[ary->type]( ary->total, ary->ptr, na_sizeof[ary->type], rmax );
 
   return self;
 }

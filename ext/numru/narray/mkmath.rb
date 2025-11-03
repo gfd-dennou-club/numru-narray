@@ -29,7 +29,7 @@ print <<EOM
 
 VALUE rb_mNMath;
 
-static void TpErr(void) {
+static void TpErr(void *p1, void *p2) {
     rb_raise(rb_eTypeError,"illegal operation with this type");
 }
 
@@ -711,7 +711,7 @@ print <<EOM
 /* ------------------------- Execution -------------------------- */
 
 static void
- na_exec_math(struct NARRAY *a1, struct NARRAY *a2, void (*func)())
+ na_exec_math(struct NARRAY *a1, struct NARRAY *a2, void (*func)(void *, void *))
 {
   na_shape_t i;
   int s1, s2;

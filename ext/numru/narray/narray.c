@@ -1155,7 +1155,7 @@ static VALUE
   VALUE v;
   struct NARRAY *ary;
   char *p;
-  void (*func)();
+  na_setfunc_ptr_t func;
 
   GetNArray(obj,ary);
 
@@ -1164,7 +1164,7 @@ static VALUE
   func = SetFuncs[NA_ROBJ][ary->type];
 
   for ( i=ary->total; i-->0; ) {
-    (*func)( 1, &v, 0, p, 0 );
+    (*func)( 1, (char*)&v, 0, p, 0 );
     rb_yield(v);
     p += sz;
   }
@@ -1181,7 +1181,7 @@ static VALUE
   VALUE v, obj2;
   struct NARRAY *a1, *a2;
   char *p1, *p2;
-  void (*get)(), (*set)();
+  na_setfunc_ptr_t get, set;
 
   GetNArray(obj1,a1);
   obj2 = na_make_object(a1->type, a1->rank, a1->shape, CLASS_OF(obj1));
@@ -1194,9 +1194,9 @@ static VALUE
   set = SetFuncs[a1->type][NA_ROBJ];
 
   for ( i=a1->total; i-->0; ) {
-    (*get)( 1, &v, 0, p1, 0 );
+    (*get)( 1, (char*)&v, 0, p1, 0 );
     v = rb_yield(v);
-    (*set)( 1, p2, 0, &v, 0 );
+    (*set)( 1, p2, 0, (char*)&v, 0 );
     p1 += sz;
     p2 += sz;
   }
@@ -1213,7 +1213,7 @@ static VALUE
   VALUE v;
   struct NARRAY *a1;
   char *p1;
-  void (*get)(), (*set)();
+  na_setfunc_ptr_t get, set;
 
   GetNArray(self,a1);
 
@@ -1223,9 +1223,9 @@ static VALUE
   set = SetFuncs[a1->type][NA_ROBJ];
 
   for ( i=a1->total; i-->0; ) {
-    (*get)( 1, &v, 0, p1, 0 );
+    (*get)( 1, (char*)&v, 0, p1, 0 );
     v = rb_yield(v);
-    (*set)( 1, p1, 0, &v, 0 );
+    (*set)( 1, p1, 0, (char*)&v, 0 );
     p1 += sz;
   }
   return self;

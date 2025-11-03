@@ -25,13 +25,16 @@ struct slice {
 
 typedef void (*na_setfunc_t[NA_NTYPES][NA_NTYPES]) (na_shape_t, char*, int, char*, int);
 typedef void (*na_setbifunc_t[NA_NTYPES][NA_NTYPES]) (na_shape_t, char*, int, char*, int, char*, int);
-typedef void (*na_func_t[NA_NTYPES]) ();
+typedef void (*na_func_t[NA_NTYPES]) (na_shape_t, char*, int, char*, int);
 typedef void (*na_ufunc_t[NA_NTYPES]) (na_shape_t, char*, int, char*, int);
 typedef void (*na_bifunc_t[NA_NTYPES]) (na_shape_t, char*, int, char*, int, char*, int);
-typedef void (*na_mathfunc_t[NA_NTYPES]) ();
+typedef void (*na_mathfunc_t[NA_NTYPES]) (void *, void *);
 typedef int  (*na_sortfunc_t[NA_NTYPES]) (const void *, const void *);
 typedef void (*na_inspfunc_t[NA_NTYPES]) (VALUE*, char*);
 typedef void (*na_indgenfunc_t[NA_NTYPES]) (na_shape_t, char*, na_shape_t, na_shape_t, int);
+
+/* Single function pointer types (for use with individual function pointers) */
+typedef void (*na_setfunc_ptr_t)(na_shape_t, char*, int, char*, int);
 
 /* function arrays */
 extern na_setfunc_t SetFuncs;
@@ -122,9 +125,9 @@ int  na_set_slice_3obj( int ndim,
 			struct slice *s1, struct slice *s2, struct slice *s3,
 			na_shape_t *shp1, na_shape_t *shp2, na_shape_t *shp3, na_shape_t *shape );
 void na_loop_general(struct NARRAY *a1, struct NARRAY *a2,
-		     struct slice *s1, struct slice *s2, void (*func)());
+		     struct slice *s1, struct slice *s2, void (*func)(na_shape_t, char*, int, char*, int));
 void na_loop_index_ref(struct NARRAY *a1, struct NARRAY *a2,
-		       struct slice *s1, struct slice *s2, void (*func)());
+		       struct slice *s1, struct slice *s2, void (*func)(na_shape_t, char*, int, char*, int));
 
 /* na_index.c */
 void  na_aset_slice(struct NARRAY *dst, struct NARRAY *src, struct slice *s1);

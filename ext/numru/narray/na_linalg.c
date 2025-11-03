@@ -24,21 +24,21 @@ typedef struct NARRAY_FUNCSET {
   char *zero;
   char *one;
   char *tiny;
-  void (*set)();
-  void (*neg)();
-  void (*rcp)();
-  void (*abs)();
-  void (*add)();
-  void (*sbt)();
-  void (*mul)();
-  void (*div)();
-  void (*mod)();
-  void (*muladd)();
-  void (*mulsbt)();
-  void (*cmp)();
-  int  (*sort)();
-  void (*min)();
-  void (*max)();
+  void (*set)(na_shape_t, char*, int, char*, int);
+  void (*neg)(na_shape_t, char*, int, char*, int);
+  void (*rcp)(na_shape_t, char*, int, char*, int);
+  void (*abs)(na_shape_t, char*, int, char*, int);
+  void (*add)(na_shape_t, char*, int, char*, int);
+  void (*sbt)(na_shape_t, char*, int, char*, int);
+  void (*mul)(na_shape_t, char*, int, char*, int);
+  void (*div)(na_shape_t, char*, int, char*, int);
+  void (*mod)(na_shape_t, char*, int, char*, int);
+  void (*muladd)(na_shape_t, char*, int, char*, int, char*, int);
+  void (*mulsbt)(na_shape_t, char*, int, char*, int, char*, int);
+  void (*cmp)(na_shape_t, char*, int, char*, int, char*, int);
+  int  (*sort)(const void *, const void *);
+  void (*min)(na_shape_t, char*, int, char*, int);
+  void (*max)(na_shape_t, char*, int, char*, int);
 } na_funcset_t;
 
 VALUE cNMatrix, cNVector, cNMatrixLU;
@@ -49,7 +49,7 @@ static ID id_lu, id_pivot;
 static void
 na_loop_linalg( int nd, char *p1, char *p2, char *p3,
 		struct slice *s1, struct slice *s2, struct slice *s3,
-		void (*func)(), na_shape_t *shape, int type )
+		void (*func)(int, char*, int, char*, int, char*, int, na_shape_t*, int), na_shape_t *shape, int type )
 {
   int i;
   int ps1 = s1[0].pstep;
@@ -103,7 +103,7 @@ na_shape_total( int n, na_shape_t *shape )
 
 static void
 na_exec_linalg( struct NARRAY *a1, struct NARRAY *a2, struct NARRAY *a3,
-		int ncd1, int ncd2, int ncd3, void (*func)() )
+		int ncd1, int ncd2, int ncd3, void (*func)(int, char*, int, char*, int, char*, int, na_shape_t*, int) )
 {
   int   ndim, ncd, nsz1, nsz2, nsz3;
   na_shape_t  *itr, *shp1, *shp2, *shp3;
@@ -296,7 +296,7 @@ static VALUE
   struct NARRAY *ary;
   VALUE piv;
   char *ptr, *idx;
-  void (*func)();
+  void (*func)(na_shape_t, char*, na_shape_t, na_shape_t, int);
 
   GetNArray(self,ary);
 
