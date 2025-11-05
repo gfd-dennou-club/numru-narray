@@ -27,8 +27,8 @@ module NumRu
 
     def self.kernel(*narys, &block)
       @@kernel_num += 1
-      na = -1
-      args = []
+      na = 0 # id of arguments
+      args = [] # used in TEMPL_ccode
       kernel = NArrayCLoop::Kernel.new
       arys = narys.map do |ary|
         case ary
@@ -37,8 +37,8 @@ module NumRu
         else
           raise "#{ary.class} is not supported."
         end
-        na += 1
         vn = "v#{na}"
+        na += 1
         args.push vn
         NArrayCLoop::Ary.new(ary.shape, ary.rank, ary.typecode, vn, kernel)
       end
@@ -73,6 +73,9 @@ module NumRu
             file.print extconf
           end
           unless system("ruby extconf.rb > log 2>&1")
+            print sep, "# Directory\n"
+            print sep, dir, "\n"
+
             print sep, "# LOG (ruby extconf.rb)\n"
             print sep, File.read("log"), "\n"
 
@@ -266,12 +269,12 @@ EOF
       def initialize(kernel, *arg)
         @kernel = kernel
         @parent = kernel.current
+        kernel.current = self
         @depth = @parent.depth + 1
         @idx ||= @parent.idx
         @block = Array.new
         @svs = Array.new
         @scalar_num = @parent.scalar_num
-        kernel.current = self
         @parent.append self
         @last = nil
         @hook = get_hook
@@ -315,7 +318,10 @@ EOF
 
       def close
         set_trace_func(nil) if type == :main
-        @last[1].scalar(@last[0]) if @last
+        if @last # [Block, Scalar]
+          @last[1].scalar(@last[0])
+          @last = nil
+        end
         @kernel.current = @parent
         svs = Array.new
         @svs.each do |sv|
@@ -337,7 +343,7 @@ EOF
 
       def get_hook
         @hook = lambda do |event, file, line, id, binding, klass|
-          if file != __FILE__ && event=="line"
+          if file != __FILE__ && /<internal:/ !~ file && event=="line"
             if @last
               @last[1].scalar(@last[0])
               @last = nil
@@ -498,7 +504,11 @@ EOF
       def +(i)
         case i
         when Integer
-          NArrayCLoop::Index.new(@idx,@min,@max,@shift+i,@fact)
+          if i == 0
+            self
+          else
+            NArrayCLoop::Index.new(@idx,@min,@max,@shift+i,@fact)
+          end
         else
           raise ArgumentError, "invalid argument: #{i.class}"
         end
@@ -507,14 +517,18 @@ EOF
       def -(i)
         case i
         when Integer
-          NArrayCLoop::Index.new(@idx,@min,@max,@shift-i,@fact)
+          if i == 0
+            self
+          else
+            NArrayCLoop::Index.new(@idx,@min,@max,@shift-i,@fact)
+          end
         else
           raise ArgumentError, "invalid argument: #{i.class}"
         end
       end
 
       def -@
-        NArrayCLoop::Index.new(@idx,@min,@max,@shift,-1)
+        NArrayCLoop::Index.new(@idx,@min,@max,@shift,-@fact)
       end
 
       ["<", "<=", ">", ">=", "=="].each do |op|
@@ -543,10 +557,31 @@ EOF
       end
 
       def min
-        [@min*@fact, @max*@fact].min + @shift
+        c1 = @min
+        c2 = @max
+        unless @fact == 1
+          c1 *= @fact
+          c2 *= @fact
+        end
+        res = [c1, c2].min
+        unless @shift == 0
+          res += @shift
+        end
+        res
       end
+
       def max
-        [@min*@fact, @max*@fact].max + @shift
+        c1 = @min
+        c2 = @max
+        unless @fact == 1
+          c1 *= @fact
+          c2 *= @fact
+        end
+        res = [c1, c2].max
+        unless @shift == 0
+          res += @shift
+        end
+        res
       end
 
       def coerce(other)
@@ -567,7 +602,11 @@ EOF
       def +(i)
         case i
         when Integer
-          self.class.new(@value + i)
+          if i == 0
+            self
+          else
+            self.class.new(@value + i)
+          end
         when NArrayCLoop::Index
           i + @value
         else
@@ -578,7 +617,11 @@ EOF
       def -(i)
         case i
         when Integer
-          self.class.new(@value - i)
+          if i == 0
+            self
+          else
+            self.class.new(@value - i)
+          end
         when NArrayCLoop::Index
           -i + @value
         else
@@ -620,13 +663,14 @@ EOF
       end
 
       def -@
-        @value = "( -#{to_s} )"
-        push_obj(self)
+        obj = self.class.new(@type, "( - #{to_s})", @block, @parent, @define)
+        push_obj(obj)
       end
 
       def assign(other)
         @value = other.to_s
         other.use = true if self.class === other
+        self.scalar(@block.current) unless @define
         @block.current.append "#{@define} = #{@value};"
         @block.current.last = nil
         return nil
@@ -655,11 +699,17 @@ EOF
       end
 
       def push_obj(obj)
+        if obj.define
+          raise RuntimeError, "[BUG] Unexpected error"
+        end
         @block.current.last = [@block.current, obj]
         return obj
       end
 
       def scalar(block)
+        if @define
+          raise RuntimeError, "[BUG] Unexpected error"
+        end
         i = ( block.current.scalar_num += 1 )
         v = "s#{i}"
         if @value.empty?
@@ -693,7 +743,7 @@ EOF
       end
 
       def inspect
-        "<#{self.class.name}: type=#{@type}, defined?=#{self.define || false}, value=#{@value}>"
+        "<#{self.class.name}: type=#{@type}, defined?=#{@define || false}, value=#{@value}>"
       end
 
     end # class Scalar
