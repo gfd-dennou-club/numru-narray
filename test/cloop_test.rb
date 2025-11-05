@@ -191,45 +191,37 @@ class TestCLoop < Test::Unit::TestCase
   end
 
   def test_if_element
-    ## --------------------------------------------------------------------------##
-    pend do
-      z = NArray.lint(N,M)
-      NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
-        c_loop(0,M-1) do |j|
-          c_loop(0,N-1) do |i|
-            c_if( x[i,j] > 500 ) do
-              z[i,j] = x[i,j] + y[i,j]
-            end
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          c_if( x[i,j] > 500 ) do
+            z[i,j] = x[i,j] + y[i,j]
           end
         end
       end
-      mask = @x.gt(500)
-      zr = NArray.lint(N,M)
-      zr[mask] = @x[mask] + @y[mask]
-      assert_equal(zr, z)
     end
-    ## --------------------------------------------------------------------------##
+    mask = @x.gt(500)
+    zr = NArray.lint(N,M)
+    zr[mask] = @x[mask] + @y[mask]
+    assert_equal(zr, z)
   end
 
   def test_if_element_add
-    ## --------------------------------------------------------------------------##
-    pend do
-      z = NArray.lint(N,M)
-      NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
-        c_loop(0,M-1) do |j|
-          c_loop(0,N-1) do |i|
-            c_if( x[i,j] + y[i,j] >= 1000 ) do
-              z[i,j] = x[i,j] + y[i,j]
-            end
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          c_if( x[i,j] + y[i,j] >= 1000 ) do
+            z[i,j] = x[i,j] + y[i,j]
           end
         end
       end
-      mask = (@x+@y).ge(1000)
-      zr = NArray.lint(N,M)
-      zr[mask] = @x[mask] + @y[mask]
-      assert_equal(zr, z)
     end
-    ## --------------------------------------------------------------------------##
+    mask = (@x+@y).ge(1000)
+    zr = NArray.lint(N,M)
+    zr[mask] = @x[mask] + @y[mask]
+    assert_equal(zr, z)
   end
 
   def test_if_index
@@ -249,27 +241,23 @@ class TestCLoop < Test::Unit::TestCase
   end
 
   def test_if_and
-    ## --------------------------------------------------------------------------##
-    pend do
-      z = NArray.lint(N,M)
-      NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
-        c_loop(0,M-1) do |j|
-          c_loop(0,N-1) do |i|
-            c_if( (j < 50).and(x[i,j] < 100) ) do
-              z[i,j] = x[i,j] + y[i,j]
-            end
+    z = NArray.lint(N,M)
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          c_if( (j < 50).and(x[i,j] < 100) ) do
+            z[i,j] = x[i,j] + y[i,j]
           end
         end
       end
-      zr = NArray.lint(N,M)
-      idx = 0...50
-      mask = @x[true,idx].lt(100)
-      zrs = NArray.lint(N,50)
-      zrs[mask] = @x[true,idx][mask] + @y[true,idx][mask]
-      zr[true,idx] = zrs
-      assert_equal(zr, z)
     end
-    ## --------------------------------------------------------------------------##
+    zr = NArray.lint(N,M)
+    idx = 0...50
+    mask = @x[true,idx].lt(100)
+    zrs = NArray.lint(N,50)
+    zrs[mask] = @x[true,idx][mask] + @y[true,idx][mask]
+    zr[true,idx] = zrs
+    assert_equal(zr, z)
   end
 
   def test_if_else
@@ -346,49 +334,41 @@ class TestCLoop < Test::Unit::TestCase
   end
 
   def test_array_index
-    ## --------------------------------------------------------------------------##
-    pend do
-      z = NArray.lint(N,M)
-      i_idx = NArray.sint(N).random(N)
-      j_idx = NArray.sint(M).random(M)
-      NArrayCLoop.kernel(@x,@y,i_idx,j_idx,z) do |x,y,i_idx,j_idx,z|
-        c_loop(0,M-1) do |j|
-          c_loop(0,N-1) do |i|
-            z[i,j] = x[i,j] + y[i_idx[i],j_idx[j]]
-          end
+    z = NArray.lint(N,M)
+    i_idx = NArray.sint(N).random(N)
+    j_idx = NArray.sint(M).random(M)
+    NArrayCLoop.kernel(@x,@y,i_idx,j_idx,z) do |x,y,i_idx,j_idx,z|
+      c_loop(0,M-1) do |j|
+        c_loop(0,N-1) do |i|
+          z[i,j] = x[i,j] + y[i_idx[i],j_idx[j]]
         end
       end
-      zr = @x + @y[i_idx,j_idx]
-      assert_equal(zr, z)
     end
-    ## --------------------------------------------------------------------------##
+    zr = @x + @y[i_idx,j_idx]
+    assert_equal(zr, z)
   end
 
   def test_array_loop_range
-    ## --------------------------------------------------------------------------##
-    pend do
-      z = NArray.lint(M)
-      idx = NArray.sint(M,2).random(N)
-      min = idx.min(1)
-      max = idx.max(1)
-      NArrayCLoop.kernel(@x,min,max,z) do |x,min,max,z|
-        c_loop(0,M-1) do |j|
-          z[j] = 0.0
-          c_loop(min[j],max[j]) do |i|
-            z[j] = z[j] + x[i,j]
-          end
+    z = NArray.lint(M)
+    idx = NArray.sint(M,2).random(N)
+    min = idx.min(1)
+    max = idx.max(1)
+    NArrayCLoop.kernel(@x,min,max,z) do |x,min,max,z|
+      c_loop(0,M-1) do |j|
+        z[j] = 0.0
+        c_loop(min[j],max[j]) do |i|
+          z[j] = z[j] + x[i,j]
         end
       end
-      zr = NArray.lint(M)
-      for j in 0..M-1
-        zr[j] = 0.0
-        for i in min[j]..max[j]
-          zr[j] = zr[j] + @x[i,j]
-        end
-      end
-      assert_equal(zr, z)
     end
-    ## --------------------------------------------------------------------------##
+    zr = NArray.lint(M)
+    for j in 0..M-1
+      zr[j] = 0.0
+      for i in min[j]..max[j]
+        zr[j] = zr[j] + @x[i,j]
+      end
+    end
+    assert_equal(zr, z)
   end
 
   def test_scalar
@@ -406,27 +386,23 @@ class TestCLoop < Test::Unit::TestCase
         end
       end
     end
-    ## --------------------------------------------------------------------------##
-    pend do
-      NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
-        c_loop(0,M-1) do |j|
-          r = c_scalar("float")
-          r.assign 0.0
-          c_loop(0,N-1) do |i|
-            p = x[i,j] - y[i,j]
-            q = c_float( x[i,j] + y[i,j] + 1 )
-            r.assign r + p / q
-          end
-          z[j] = r
+    NArrayCLoop.kernel(@x,@y,z) do |x,y,z|
+      c_loop(0,M-1) do |j|
+        r = c_scalar("float")
+        r.assign 0.0
+        c_loop(0,N-1) do |i|
+          p = x[i,j] - y[i,j]
+          q = c_float( x[i,j] + y[i,j] + 1 )
+          r.assign r + p / q
         end
-        p = @x - @y
-        q = ( @x + @y + 1 ).to_type(NArray::SFLOAT)
-        r = p / q
-        zr = r.sum(0)
-        assert_equal(zr, z)
+        z[j] = r
       end
-      ## --------------------------------------------------------------------------##
     end
+    p = @x - @y
+    q = ( @x + @y + 1 ).to_type(NArray::SFLOAT)
+    r = p / q
+    zr = r.sum(0)
+    assert_equal(zr, z)
   end
 
   def test_scalar_math
@@ -460,37 +436,33 @@ class TestCLoop < Test::Unit::TestCase
         end
       end
     end
-    ## --------------------------------------------------------------------------##
-    pend do
-      NArrayCLoop.kernel(@x,@y,min,z) do |x,y,min,z|
-        c_loop(0,M-1) do |j|
-          imax = c_int(0)
-          c_if ( x[0,j] < N ) do
-            imax.assign x[0,j]
-          end
-          r = c_int(0)
-          c_loop(min[0],imax) do |i|
-            r.assign r + y[i,j]
-          end
-          z[j] = r
+    NArrayCLoop.kernel(@x,@y,min,z) do |x,y,min,z|
+      c_loop(0,M-1) do |j|
+        imax = c_int(0)
+        c_if ( x[0,j] < N ) do
+          imax.assign x[0,j]
         end
+        r = c_int(0)
+        c_loop(min[0],imax) do |i|
+          r.assign r + y[i,j]
+        end
+        z[j] = r
       end
-
-      zr = NArray.sint(M)
-      for j in 0..M-1
-        imax = 0
-        if @x[0,j] < N
-          imax = @x[0,j]
-        end
-        r = 0
-        for i in 0..imax
-          r = r + @y[i,j]
-        end
-        zr[j] = r
-      end
-      assert_equal(zr, z)
     end
-    ## --------------------------------------------------------------------------##
+
+    zr = NArray.sint(M)
+    for j in 0..M-1
+      imax = 0
+      if @x[0,j] < N
+        imax = @x[0,j]
+      end
+      r = 0
+      for i in 0..imax
+        r = r + @y[i,j]
+      end
+      zr[j] = r
+    end
+    assert_equal(zr, z)
   end
 
 end
